@@ -1,0 +1,54 @@
+// Package cli builds isolated commands. Callers can inject Cobra's streams and context.
+package cli
+
+import (
+	"errors"
+
+	"github.com/benbenbang/ts-jev-go-sdk/internal/config"
+	"github.com/phuslu/log"
+	"github.com/spf13/cobra"
+)
+
+// NewRoot returns a fresh command tree without reading configuration or credentials.
+// Service commands should call LoadConfig in RunE, not in a persistent hook,
+// so help and completion remain usable without a valid configuration.
+func NewRoot() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "jev", Short: "Make decisions with Jev",
+		SilenceUsage: true, SilenceErrors: true,
+		Args: func(_ *cobra.Command, args []string) error {
+			if len(args) != 0 {
+				return errors.New("root command does not accept positional arguments")
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
+	}
+	// Flag parser errors can include argument values. Do not expose credentials.
+	cmd.SetFlagErrorFunc(func(_ *cobra.Command, _ error) error {
+		return errors.New("invalid command flags: see --help")
+	})
+	flags := cmd.PersistentFlags()
+	flags.String("config", "", "Path to TOML configuration")
+	flags.String("provider", "jev", "Decision provider: jev, codex or claude")
+	flags.String("api-key", "", "Jev API key (prefer environment or config)")
+	flags.String("base-url", "https://api.typesafe.ai", "Jev API base URL")
+	flags.String("model", "jev-latest", "Jev model")
+	flags.String("timeout", "10s", "Operation timeout, for example 10s")
+	return cmd
+}
+
+// LoadConfig resolves a command's inherited flags without changing global state.
+func LoadConfig(cmd *cobra.Command) (config.Config, error) {
+	path, err := cmd.Flags().GetString("config")
+	if err != nil {
+		return config.Config{}, errors.New("configuration flag is unavailable")
+	}
+	return config.Load(path, cmd.Flags())
+}
+
+// Logger writes only to the command's error stream. Log status and safe metadata,
+// never credentials, prompt bodies, option content, or raw request/response bodies.
+func Logger(cmd *cobra.Command) log.Logger {
+	return log.Logger{Level: log.InfoLevel, Writer: log.IOWriter{Writer: cmd.ErrOrStderr()}}
+}

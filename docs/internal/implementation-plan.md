@@ -20,7 +20,8 @@
 
 ## Architecture
 
-- Public root package `typesafe`: questions, answers, request/response metadata, client, errors, retry policy.
+- Public SDK package `pkg/typesafe`: questions, answers, request/response metadata, client, errors, retry policy. The repository root stays free of SDK source files, as requested by the user.
+- SDK import: `github.com/benbenbang/ts-jev-go-sdk/pkg/typesafe`. All SDK source and adjacent tests, including future endpoints and retries, live in this package.
 - `internal/config`: independent Viper loader, TOML + environment + flags.
 - `internal/cli`: Cobra command tree, injectable input/output and service factory, stderr-only logging.
 - `internal/service`: decision interface, Jev adapter, explicit external-session placeholders.
@@ -56,6 +57,7 @@
 - [ ] 03 - Response models: Decode discriminated answers, typed accessors, integer-keyed score maps, nullable usage, model metadata, and raw response metadata. Test malformed known answers and unknown future types. Depends on 02; branch `feature/03-responses`; target 300-400 lines.
 - [ ] 04 - Client configuration: Resolve API key/base URL/model/timeouts, validate secrets without disclosure, support custom headers and HTTP-client injection, and define ownership. Test environment fallback, explicit overrides, invalid keys/URLs/timeouts, and client isolation. Depends on 03; branch `feature/04-client`; target <300 lines.
 - [ ] 05 - HTTP transport and errors: Implement authenticated context-aware HTTP, protected headers, request IDs, bounded response reading, typed status/connection/timeout/validation errors, and safe metadata. Test status mapping, malformed JSON, cancellation, headers, and response closure. Depends on 04; branch `feature/05-transport`; target 300-400 lines.
+- [ ] 05c - SDK package layout: Move the existing SDK source and tests into `pkg/typesafe`, update imports and unfinished feature worktrees, and verify tests/race/vet/build. Keep completed feature history intact and use rename-aware line counts. Depends on 05b; branch `feature/05c-pkg-layout`; target <300 changed lines.
 - [ ] 06 - SDK endpoints and overrides: Implement SystemOne and ListModels, request-specific model/timeout/headers/extra-body overrides, custom decode support, and raw HTTP response capture. Test exact endpoint paths, serialized bodies, shallow merges, and metadata. Depends on 05; branch `feature/06-endpoints`; target <300 lines.
 - [ ] 07 - Retry policy: Add bounded exponential backoff/jitter, 408/429/5xx and connection/timeout retries, Retry-After, attempt headers, configurable disable/statuses/predicate, retry budget, and cancellation. Test retry/no-retry outcomes and replayed bodies without real sleeps. Depends on 06; branch `feature/07-retries`; target 300-400 lines.
 - [ ] 08 - TOML configuration: Replace the config stub with isolated Viper loading and validated runtime settings. Test XDG/HOME discovery, missing optional versus explicit files, malformed TOML, defaults, environment, and flag precedence. Depends on 01; branch `feature/08-config`; target <300 lines.

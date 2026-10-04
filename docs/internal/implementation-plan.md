@@ -72,3 +72,8 @@
 - Upstream compatibility gaps and Go-specific ownership/custom-decoder choices are documented explicitly.
 - Every branch stays below 450 changed lines and preserves a linear ancestry; main is unchanged.
 - PR publication and merge are pending user action, not treated as completed tickets.
+
+## Follow-up scope added by the user
+
+- [ ] 13 - `jev skill`: Add a standalone follow-up branch for the upstream TypeSafe AI skill, default Jev provider and hidden `--jev`, plus exclusive `--online` / `--local` modes. Online mode gives the LLM a GitHub source to fetch; local mode downloads the latest `SKILL.md`. Confirm default mode and output/install destination before implementation. Test help visibility, mode validation, content delivery, and failed downloads through an injected HTTP client. Depends on 09; target <300 lines, hard 450. This follow-up is not part of the initial SDK/decision CLI acceptance gates.
+- Source: https://github.com/typesafe-ai/skills/blob/main/skills/typesafe-ai/SKILL.md

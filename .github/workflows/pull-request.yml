@@ -1,0 +1,41 @@
+name: pull-request
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - edited
+      - reopened
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    name: pre-commit checks
+    uses: benbenbang/reusable-workflows/.github/workflows/prek.yml@main
+    permissions:
+      contents: read
+      packages: read
+    secrets: inherit
+
+  pr-labeler:
+    name: pr labeler
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v5
+
+      - name: pr labeler
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml

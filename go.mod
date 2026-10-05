@@ -3,7 +3,6 @@ module github.com/benbenbang/ts-jev-go-sdk
 go 1.27.1
 
 require (
-	github.com/phuslu/log v1.0.137
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 )

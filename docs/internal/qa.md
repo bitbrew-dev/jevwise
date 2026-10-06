@@ -168,3 +168,9 @@
 - Baseline: `9abf4a9`; branch: `feature/18c-update-integration`; 439 changed lines, hard cap respected.
 - Soft-cap exception for injected CLI stage/deadline/publication-state coverage, fake HTTP-to-temporary-executable integration, and unchanged-metadata inode exchange. Independent/root full/repeated tests, race, vet/build/tidy, fixtures and formatting passed; native offline smoke and six cross-builds passed.
 - Read-only checks remain config/credential independent; automatic installs reject unknown versions/unsupported platforms before effects, never rewrite equal/newer versions, and report successful publication even on later cancellation/cleanup/output errors. No user executable changed, inspected binary executed, real release downloaded or release published.
+
+## MCP tool foundation 19a
+
+- Baseline: `4237ea0`; branch: `feature/19a-mcp-tool`; 449 changed lines, hard cap respected.
+- Soft-cap exception for SDK v1.8.0 dependency pins, explicit schemas, duplicate/null/unknown-field rejection, input/output bounds and protocol/cancellation/privacy coverage. Independent/root full/repeated tests, race, vet/build/tidy, fixtures and formatting passed; six all-package cross-builds and both Windows test compilations passed.
+- Review caught a duplicate prompt ending in null that retained the earlier string; token-based duplicate rejection fixed it with regressions. Structured results preserve service probabilities and nullable usage; fixed wire errors retain causes only server-side. No HTTP listener, CLI registration, background process, real decision/release request or workflow change in this foundation slice.

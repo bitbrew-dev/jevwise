@@ -266,3 +266,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Exact guarded endpoints acknowledge with bounded complete responses before one-shot cancellation. Mutual HMAC authentication remains mandatory before management CLI exposure. No paid calls, user daemon or release changes.
+
+## MCP bounded management controller 19e2
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Dedicated local requests reject redirects, proxies, malformed or oversized responses and cancellation. Mutual HMAC proofs remain mandatory before CLI exposure. No paid calls, user daemon or release changes.

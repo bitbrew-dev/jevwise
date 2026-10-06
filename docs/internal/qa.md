@@ -235,3 +235,8 @@
 - 193 source/test lines plus plan/QA, below the soft cap. Independent native ACL fixtures, repeated tests/race and root full gates passed; all six cross-builds passed.
 - Every extended ACL is refused through the pinned file descriptor. Unknown, unavailable, truncated, malformed or nonempty extended-security results fail closed; no path-based repair or permission weakening.
 - Linux mode/owner checks remain unchanged. Token/state exposure follows platform privacy completion; no paid requests, user daemon or release changes.
+
+## MCP read-only runtime storage 19d1c
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Inspection opens existing validated storage without mkdir, lease acquisition, repair or cleanup. Missing paths remain absent; borrowed closure preserves ownership. No paid calls, user daemon or release changes.

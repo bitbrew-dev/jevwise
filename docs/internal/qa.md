@@ -317,3 +317,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Publication precedes ACK and decisions require running state. Prepared stop closes the startup pipe promptly; cancellation and conservative cleanup release owned resources once. Independent aggregate QA matched dedicated files. No paid calls, user daemon or release changes.
+
+## MCP child failure regressions 19f2b2
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Factory failures, nil and typed-nil services and pre-ACK EOF preserve cleanup invariants. Independent aggregate QA matched the dedicated fixture. No paid calls, user daemon or release changes.

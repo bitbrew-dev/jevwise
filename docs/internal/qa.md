@@ -126,3 +126,9 @@
 - Baseline: `5ba89cd`; branch: `feature/16-version`; private specification excluded.
 - Root version flag and subcommand must share safe, config-independent output; make metadata and Windows executable suffix checked.
 - Independent/root tests, race, vet, build, tidy-diff, formatting and linked native smoke passed; both Windows cross-builds passed. Final delta: 274 lines, below soft cap.
+
+## Release assets 17a
+
+- Baseline: `60c09b0`; branch: `feature/17a-release-assets`; manual semantic-release unchanged.
+- Native Windows tests use USERPROFILE; trusted tooling/provenance, no-redirect publishing and manifest-last safety justify the soft-cap exception.
+- Independent/root fixture tests, actionlint/shellcheck, Go tests/race/vet/build/tidy, and six actual offline builds/native smoke passed; 410 lines. Publication was not invoked; all three native CI jobs must pass before merge.

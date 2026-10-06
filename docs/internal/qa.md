@@ -240,3 +240,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Inspection opens existing validated storage without mkdir, lease acquisition, repair or cleanup. Missing paths remain absent; borrowed closure preserves ownership. No paid calls, user daemon or release changes.
+
+## MCP strict instance state 19d3a
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Strict bounded metadata and private-key reads reject malformed, unsafe and partial state. Presence alone never proves liveness; no process IDs or credentials enter public metadata. No paid calls, user daemon or release changes.

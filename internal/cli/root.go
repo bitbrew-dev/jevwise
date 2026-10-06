@@ -4,7 +4,7 @@ package cli
 import (
 	"errors"
 
-	"github.com/benbenbang/ts-jev-go-sdk/internal/config"
+	"github.com/bitbrew-dev/jevwise/internal/config"
 	"github.com/phuslu/log"
 	"github.com/spf13/cobra"
 )

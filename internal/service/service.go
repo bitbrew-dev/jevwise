@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	typesafe "github.com/benbenbang/ts-jev-go-sdk/pkg/typesafe"
+	typesafe "github.com/bitbrew-dev/jevwise/pkg/typesafe"
 )
 
 // ErrNotImplemented identifies a reserved provider with no executable integration.

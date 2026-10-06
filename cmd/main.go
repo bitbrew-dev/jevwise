@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/benbenbang/ts-jev-go-sdk/internal/cli"
+	"github.com/bitbrew-dev/jevwise/internal/cli"
 )
 
 func main() {

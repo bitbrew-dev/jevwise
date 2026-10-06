@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbenbang/ts-jev-go-sdk/internal/config"
-	"github.com/benbenbang/ts-jev-go-sdk/internal/service"
+	"github.com/bitbrew-dev/jevwise/internal/config"
+	"github.com/bitbrew-dev/jevwise/internal/service"
 )
 
 type decideFunc func(context.Context, service.Request) (service.Response, error)

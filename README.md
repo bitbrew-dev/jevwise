@@ -74,7 +74,9 @@ bin/jev skill --online # Print the upstream GitHub URL only
 
 ## Go SDK quickstart
 
-The repository name is `jevwise`, but the declared Go module is still `github.com/benbenbang/ts-jev-go-sdk`. Its rename is a separate follow-up. The example below uses the current import path inside this checkout.
+Import the public SDK from `github.com/bitbrew-dev/jevwise/pkg/typesafe`. The CLI executable remains `jev`.
+
+Migration: replace previous `github.com/benbenbang/ts-jev-go-sdk/pkg/typesafe` imports with the new path. No old-module compatibility alias is provided; SDK APIs and configuration names are unchanged.
 
 ```go
 package main
@@ -83,7 +85,7 @@ import (
     "context"
     "fmt"
 
-    "github.com/benbenbang/ts-jev-go-sdk/pkg/typesafe"
+    "github.com/bitbrew-dev/jevwise/pkg/typesafe"
 )
 
 func main() {
@@ -142,4 +144,4 @@ Tests use injected services/transports and local HTTP fixtures, not paid API req
 
 - Compatibility is pinned to Python SDK v0.7.2, revision `f078f1e208a0d885154dc758344ae4fce77ac168`.
 - [Compatibility notes](docs/internal/compatibility.md) describe Go-specific validation, ownership, decoding, and retry differences.
-- Remaining follow-ups: module rename, version display, release checking, and verified self-update. These features are not implemented yet.
+- Remaining follow-ups: version display, release checking, and verified self-update. These features are not implemented yet.

@@ -2,7 +2,7 @@
 NAME = jev
 DirName ?= build
 PKG = jev
-ProjectUrl = "https://github.com/benbenbang/ts-jev-go-sdk"
+ProjectUrl = "https://github.com/bitbrew-dev/jevwise"
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 BuildTime = $(shell date -u '+%Y-%m-%d_%H:%M:%S')

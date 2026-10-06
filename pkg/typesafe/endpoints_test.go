@@ -217,3 +217,207 @@ func TestSystemOneIntoCustomAttempt(t *testing.T) {
 		}
 	}
 }
+
+func retryEndpointClient(t *testing.T, tr http.RoundTripper, policy *RetryPolicy) (*Client, *runnerClock) {
+	t.Helper()
+	c, err := NewClient(ClientOptions{APIKey: "secret-key", BaseURL: "https://example.com", HTTPClient: &http.Client{Transport: tr}, Retry: policy})
+	if err != nil {
+		t.Fatal(err)
+	}
+	clock := &runnerClock{}
+	c.retryHooks = clock.hooks()
+	return c, clock
+}
+
+func retryReply(status int, body string) *http.Response {
+	return &http.Response{StatusCode: status, Header: http.Header{"Retry-After": {"0"}}, Body: io.NopCloser(strings.NewReader(body))}
+}
+
+func TestEndpointDefaultRetryReplay(t *testing.T) {
+	headers := http.Header{retryCountHeader: {"99"}, "X-Custom": {"original"}}
+	request := endpointRequest()
+	calls, predicates := 0, 0
+	var frozen string
+	c, clock := retryEndpointClient(t, roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		if r.Header.Get("X-Custom") != "original" {
+			t.Fatal("caller header mutation changed a retry")
+		}
+		want := []string{"", "1", "2"}[calls]
+		if r.Header.Get(retryCountHeader) != want {
+			t.Fatalf("retry header: %q, want %q", r.Header.Get(retryCountHeader), want)
+		}
+		body, _ := io.ReadAll(r.Body)
+		if calls == 0 {
+			frozen = string(body)
+			headers.Set("X-Custom", "mutated")
+			request.State.(map[string]any)["integer"] = 7
+		} else if string(body) != frozen {
+			t.Fatal("request was remarshaled between attempts")
+		}
+		calls++
+		if calls < 3 {
+			return retryReply(503, `{}`), nil
+		}
+		return retryReply(200, endpointResponse), nil
+	}), nil)
+	c.retry.Predicate = func(error) bool { predicates++; return false }
+	result, err := c.SystemOne(context.Background(), request, RequestOptions{Headers: headers})
+	if err != nil || result.Nouls()["q"].Noul != 0.7 || calls != 3 || predicates != 0 || len(clock.sleeps) != 2 {
+		t.Fatalf("default retries: %v/%d/%d/%v", err, calls, predicates, clock.sleeps)
+	}
+}
+
+func TestEndpointRetryOverrideIsolation(t *testing.T) {
+	for _, maxRetries := range []int{0, 1} {
+		calls := 0
+		policy := DefaultRetryPolicy()
+		policy.MaxRetries = maxRetries
+		c, _ := retryEndpointClient(t, roundTripFunc(func(*http.Request) (*http.Response, error) {
+			calls++
+			policy.MaxRetries, policy.HTTPStatuses[503] = 0, false
+			return retryReply(503, `{}`), nil
+		}), nil)
+		_, err := c.SystemOneRaw(context.Background(), endpointRequest(), RequestOptions{Retry: &policy})
+		if err == nil || calls != maxRetries+1 || c.retry.MaxRetries != 2 || !c.retry.HTTPStatuses[503] {
+			t.Fatal("per-call policy was not isolated or inherited client fields")
+		}
+		calls = 0
+		if _, err := c.ListModelsRaw(context.Background()); err == nil || calls != 3 {
+			t.Fatal("override leaked into subsequent call")
+		}
+	}
+	calls := 0
+	without, _ := retryEndpointClient(t, roundTripFunc(func(*http.Request) (*http.Response, error) { calls++; return retryReply(503, `{}`), nil }), nil)
+	if _, err := without.ListModelsRaw(context.Background(), RequestOptions{Retry: &RetryPolicy{MaxRetries: 2}}); err == nil || calls != 1 {
+		t.Fatal("override inherited default status selection")
+	}
+	c, _ := retryEndpointClient(t, roundTripFunc(func(*http.Request) (*http.Response, error) { t.Fatal("invalid policy dispatched"); return nil, nil }), nil)
+	bad := &RetryPolicy{MaxRetries: -1}
+	if _, err := c.SystemOneRaw(context.Background(), endpointRequest(), RequestOptions{Retry: bad}); err == nil {
+		t.Fatal("invalid System One policy accepted")
+	}
+	if _, err := c.ListModels(context.Background(), RequestOptions{Retry: bad}); err == nil {
+		t.Fatal("invalid models policy accepted")
+	}
+}
+
+func TestEndpointDecodeRetries(t *testing.T) {
+	for _, kind := range []string{"raw", "typed", "models", "custom"} {
+		t.Run(kind, func(t *testing.T) {
+			calls := 0
+			c, _ := retryEndpointClient(t, roundTripFunc(func(*http.Request) (*http.Response, error) {
+				calls++
+				body := endpointResponse
+				if kind == "models" {
+					body = `{"models":[]}`
+				} else if kind == "custom" {
+					body = `{"value":7}`
+				}
+				if calls == 1 {
+					body = `{}`
+				}
+				return retryReply(200, body), nil
+			}), nil)
+			policy := DefaultRetryPolicy()
+			policy.Predicate = func(err error) bool { var invalid *ResponseValidationError; return errors.As(err, &invalid) }
+			opts := RequestOptions{Retry: &policy}
+			var err error
+			switch kind {
+			case "raw":
+				var raw *RawResponse
+				raw, err = c.SystemOneRaw(context.Background(), endpointRequest(), opts)
+				var typed SystemOneResponse
+				if raw.Decode(&typed) == nil || calls != 1 {
+					t.Fatal("standalone raw decode retried HTTP")
+				}
+			case "typed":
+				_, err = c.SystemOne(context.Background(), endpointRequest(), opts)
+			case "models":
+				_, err = c.ListModels(context.Background(), opts)
+			case "custom":
+				observer := &retryCustomDecoder{}
+				_, err = c.SystemOneInto(context.Background(), endpointRequest(), observer, opts)
+				if observer.calls != 2 {
+					t.Fatal("custom decode was not inside retry attempt")
+				}
+			}
+			if err != nil || kind != "raw" && calls != 2 {
+				t.Fatalf("decode retries: %v/%d", err, calls)
+			}
+		})
+	}
+}
+
+type retryCustomDecoder struct{ calls int }
+
+func (d *retryCustomDecoder) UnmarshalJSON([]byte) error {
+	d.calls++
+	if d.calls == 1 {
+		return errors.New("custom schema failure")
+	}
+	return nil
+}
+
+func TestEndpointRetryTerminalAndTimeoutCases(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		status int
+		calls  int
+	}{{"forbidden", 403, 1}, {"validation", 200, 1}, {"timeout success", 0, 2}, {"terminal timeout", 0, 3}, {"connection success", -1, 2}} {
+		calls := 0
+		c, _ := retryEndpointClient(t, roundTripFunc(func(*http.Request) (*http.Response, error) {
+			calls++
+			if tc.status <= 0 && (calls == 1 || tc.name == "terminal timeout") {
+				if tc.status == -1 {
+					return nil, errors.New("connection failure")
+				}
+				return nil, context.DeadlineExceeded
+			}
+			if tc.status > 0 {
+				return retryReply(tc.status, `{}`), nil
+			}
+			return retryReply(200, endpointResponse), nil
+		}), nil)
+		_, err := c.SystemOne(context.Background(), endpointRequest())
+		if calls != tc.calls || tc.calls == 2 && err != nil || tc.calls != 2 && err == nil {
+			t.Fatalf("%s: %v/%d", tc.name, err, calls)
+		}
+		if tc.name == "terminal timeout" {
+			var timeout *TimeoutError
+			if !errors.As(err, &timeout) || timeout.Method != "POST" || timeout.URL != "https://example.com/v1/systemone" || !errors.Is(err, context.DeadlineExceeded) {
+				t.Fatal("per-attempt timeout metadata lost")
+			}
+		}
+	}
+}
+
+func TestEndpointCallerCancellationAndRetryBudget(t *testing.T) {
+	for _, deadline := range []bool{false, true} {
+		ctx, cancel := context.WithCancel(context.Background())
+		if deadline {
+			ctx, cancel = context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+		} else {
+			cancel()
+		}
+		c, _ := retryEndpointClient(t, roundTripFunc(func(*http.Request) (*http.Response, error) { t.Fatal("caller expiration dispatched"); return nil, nil }), nil)
+		c.retry.Predicate = func(error) bool { t.Fatal("caller expiration invoked predicate"); return true }
+		_, err := c.SystemOneRaw(ctx, endpointRequest())
+		var timeout *TimeoutError
+		if !errors.Is(err, ctx.Err()) || deadline && (!errors.As(err, &timeout) || timeout.URL != "https://example.com/v1/systemone") {
+			t.Fatal("caller expiration mapping failed", err)
+		}
+		cancel()
+	}
+	calls := 0
+	c, clock := retryEndpointClient(t, roundTripFunc(func(*http.Request) (*http.Response, error) {
+		calls++
+		reply := retryReply(503, `{}`)
+		reply.Header = nil
+		return reply, nil
+	}), nil)
+	policy := DefaultRetryPolicy()
+	policy.Budget = 500 * time.Millisecond
+	if _, err := c.ListModelsRaw(context.Background(), RequestOptions{Retry: &policy}); err == nil || calls != 1 || len(clock.sleeps) != 0 {
+		t.Fatal("exact retry delay budget boundary dispatched again")
+	}
+}

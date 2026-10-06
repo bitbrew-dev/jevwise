@@ -73,6 +73,8 @@ class ReleaseFixtures(unittest.TestCase):
                     return {"GOHOSTOS": "darwin", "GOHOSTARCH": "arm64"}[arguments[2]]
                 if arguments[:2] == ["go", "build"]:
                     self.assertEqual(env["CGO_ENABLED"], "0")
+                    self.assertIn("-trimpath", arguments)
+                    self.assertIn(f"{release.BUILDINFO}.UpdateStamp=JEVWISE_UPDATE_V1[{TAG}]JEVWISE_UPDATE_END", arguments[arguments.index("-ldflags") + 1])
                     Path(arguments[arguments.index("-o") + 1]).write_bytes((env["GOOS"] + env["GOARCH"]).encode())
                     return ""
                 self.assertTrue(arguments[0].endswith("darwin_arm64"))

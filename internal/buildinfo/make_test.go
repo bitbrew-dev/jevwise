@@ -41,7 +41,7 @@ func TestMakeExactCleanTagAndWindowsOutput(t *testing.T) {
 			t.Fatalf("make failed: %s", output)
 		}
 		text := string(output)
-		for _, want := range []string{"mkdir -p \"custom-output\"", "jev-windows-arm64.exe", "github.com/bitbrew-dev/jevwise/internal/buildinfo.Version=" + tc.want, "buildinfo.Commit=abc123", "buildinfo.Date=stamp"} {
+		for _, want := range []string{"go build -trimpath", "mkdir -p \"custom-output\"", "jev-windows-arm64.exe", "github.com/bitbrew-dev/jevwise/internal/buildinfo.Version=" + tc.want, "buildinfo.Commit=abc123", "buildinfo.Date=stamp", "buildinfo.UpdateStamp=" + UpdateStampPrefix + tc.want + UpdateStampSuffix} {
 			if !strings.Contains(text, want) {
 				t.Errorf("make output missing %q: %s", want, text)
 			}

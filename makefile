@@ -71,10 +71,11 @@ verify:
 build-platform: verify
 	@echo "Building $(VERSION_TYPE) version: $(VERSION)"
 	@mkdir -p "$(DirName)"
-	@GOOS=$(GOOS) GOARCH=$(GOARCH) go build -p $(CORES) -v \
+	@GOOS=$(GOOS) GOARCH=$(GOARCH) go build -trimpath -p $(CORES) -v \
 	        -o "$(OUTPUT)" \
 	        -ldflags="-s -w \
 	        -X $(PKG).Version=$(VERSION) \
+	        -X $(PKG).UpdateStamp=JEVWISE_UPDATE_V1[$(VERSION)]JEVWISE_UPDATE_END \
 	        -X $(PKG).Commit=$(BuildCommit) \
 	        -X $(PKG).Date=$(BuildTime)" ./cmd
 ifneq ($(GOOS),windows)

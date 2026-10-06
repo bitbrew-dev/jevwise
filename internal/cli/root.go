@@ -59,6 +59,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	cmd.AddCommand(newUpdate(updateOps{releaseClient.Latest, releaseClient.Download, update.Replace, runtime.GOOS, runtime.GOARCH}, buildinfo.Version))
 	cmd.AddCommand(newDecide(factory))
 	cmd.AddCommand(newMCP(factory, mcpserver.Run))
+	cmd.AddCommand(newMCPChild(factory))
 	cmd.AddCommand(newSkill(newSkillFetch(nil), installSkill))
 	return cmd
 }

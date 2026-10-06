@@ -312,3 +312,8 @@
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Explicit protected token files override environment without fallback. Lazy help and management execution avoid token reads; service construction follows validation. No paid calls, user daemon or release changes.
 - Native Windows places repository and temporary files on different drives. The relative-path fixture now uses its own temporary runtime as cwd, preserving both absolute and relative cases with automatic cwd cleanup; production behavior is unchanged. Corrected exact-head CI must pass before merge.
+
+## MCP owned hidden child lifecycle 19f2b
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Publication precedes ACK and decisions require running state. Prepared stop closes the startup pipe promptly; cancellation and conservative cleanup release owned resources once. Independent aggregate QA matched dedicated files. No paid calls, user daemon or release changes.

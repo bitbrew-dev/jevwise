@@ -13,13 +13,15 @@ import (
 // keeps the request/client model; a non-nil pointer preserves even empty text.
 // Timeout zero inherits the client timeout. ExtraBody shallowly overwrites the
 // validated System One body, including state/model/questions and explicit nulls.
-// Models calls accept only Timeout and Headers. At most one options value is allowed.
+// Retry nil inherits the client policy; a non-nil policy fully overrides it.
+// Models calls accept Timeout, Headers, and Retry. At most one options value is allowed.
 // Callers must not mutate referenced maps while a call is being prepared.
 type RequestOptions struct {
 	Model     *string
 	Timeout   time.Duration
 	Headers   http.Header
 	ExtraBody map[string]any
+	Retry     *RetryPolicy
 }
 
 func callOptions(options []RequestOptions) (RequestOptions, error) {
@@ -32,6 +34,13 @@ func callOptions(options []RequestOptions) (RequestOptions, error) {
 	}
 	if out.Timeout < 0 {
 		return RequestOptions{}, errors.New("typesafe: timeout must be positive")
+	}
+	if out.Retry != nil {
+		policy, err := snapshotRetry(*out.Retry)
+		if err != nil {
+			return RequestOptions{}, err
+		}
+		out.Retry = &policy
 	}
 	out.Headers = out.Headers.Clone()
 	return out, nil
@@ -83,12 +92,25 @@ func (c *Client) modelsCall(ctx context.Context, options []RequestOptions, decod
 	return c.call(ctx, http.MethodGet, "/v1/models", nil, opts, decode)
 }
 
-// call keeps transport and optional decoding within one attempt. The retry
-// runner can later repeat this entire unit, including custom decoding failures.
+// call replays the frozen body with transport and decoding in the same attempt.
 func (c *Client) call(ctx context.Context, method, path string, body []byte, opts RequestOptions, decode func(*RawResponse) error) (*RawResponse, error) {
-	raw, err := c.sendOnce(ctx, method, path, body, opts.Timeout, opts.Headers, 0)
-	if err == nil && decode != nil {
-		err = decode(raw)
+	policy := c.retry
+	if opts.Retry != nil {
+		policy = *opts.Retry
+	}
+	policy, err := snapshotRetry(policy)
+	if err != nil {
+		return nil, err
+	}
+	raw, err := runRetry(ctx, policy, func(ctx context.Context, attempt int) (*RawResponse, error) {
+		raw, err := c.sendOnce(ctx, method, path, body, opts.Timeout, opts.Headers, attempt)
+		if err == nil && decode != nil {
+			err = decode(raw)
+		}
+		return raw, err
+	}, c.retryHooks)
+	if err == context.DeadlineExceeded {
+		err = &TimeoutError{Method: method, URL: c.redact(c.baseURL + path), Err: err}
 	}
 	return raw, err
 }

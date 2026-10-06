@@ -3,6 +3,7 @@ package typesafe
 
 import (
 	"fmt"
+	"maps"
 	"net"
 	"net/http"
 	"net/url"
@@ -20,9 +21,11 @@ const (
 // ClientOptions configures a Client. Empty strings fall back to TYPESAFE_API_KEY,
 // TYPESAFE_BASE_URL and TYPESAFE_DEFAULT_MODEL, respectively, then SDK defaults.
 // Timeout zero selects DefaultTimeout; negative values are invalid. The timeout
-// is the SDK operation budget, independent of an injected HTTP client's timeout.
+// is the per-attempt budget, independent of an injected HTTP client's timeout.
 // Headers are copied. HTTPClient remains caller-owned and must not be mutated
 // concurrently with SDK operations; Close never closes its idle connections.
+// Retry nil selects defaults; an explicit zero policy disables retries. Its
+// status map is copied. Callers must not mutate options during construction.
 type ClientOptions struct {
 	APIKey       string
 	BaseURL      string
@@ -30,6 +33,7 @@ type ClientOptions struct {
 	Timeout      time.Duration
 	Headers      http.Header
 	HTTPClient   *http.Client
+	Retry        *RetryPolicy
 }
 
 // Client holds immutable configuration and a reusable HTTP connection pool.
@@ -42,6 +46,8 @@ type Client struct {
 	headers        http.Header
 	httpClient     *http.Client
 	ownedTransport *http.Transport
+	retry          RetryPolicy
+	retryHooks     retryHooks
 }
 
 // NewClient resolves explicit options before environment values and defaults.
@@ -73,8 +79,16 @@ func NewClient(options ClientOptions) (*Client, error) {
 	if timeout == 0 {
 		timeout = DefaultTimeout
 	}
+	retry := DefaultRetryPolicy()
+	if options.Retry != nil {
+		retry = *options.Retry
+	}
+	retry, err = snapshotRetry(retry)
+	if err != nil {
+		return nil, err
+	}
 	c := &Client{apiKey: key, baseURL: strings.TrimRight(base, "/"), defaultModel: model,
-		timeout: timeout, headers: options.Headers.Clone(), httpClient: options.HTTPClient}
+		timeout: timeout, headers: options.Headers.Clone(), httpClient: options.HTTPClient, retry: retry}
 	if c.headers == nil {
 		c.headers = make(http.Header)
 	}
@@ -92,6 +106,14 @@ func NewClient(options ClientOptions) (*Client, error) {
 		c.httpClient = &http.Client{Transport: c.ownedTransport}
 	}
 	return c, nil
+}
+
+func snapshotRetry(policy RetryPolicy) (RetryPolicy, error) {
+	if err := policy.Validate(); err != nil {
+		return RetryPolicy{}, err
+	}
+	policy.HTTPStatuses = maps.Clone(policy.HTTPStatuses)
+	return policy, nil
 }
 
 func resolveOption(value, environment, fallback string) string {

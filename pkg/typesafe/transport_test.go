@@ -28,7 +28,7 @@ func (r failingReader) Read([]byte) (int, error) { return 0, r.err }
 
 func transportClient(t *testing.T, tr http.RoundTripper) *Client {
 	t.Helper()
-	c, err := NewClient(ClientOptions{APIKey: "secret-key", BaseURL: "https://example.com/prefix", HTTPClient: &http.Client{Transport: tr}})
+	c, err := NewClient(ClientOptions{APIKey: "secret-key", BaseURL: "https://example.com/prefix", HTTPClient: &http.Client{Transport: tr}, Retry: &RetryPolicy{}})
 	if err != nil {
 		t.Fatal(err)
 	}

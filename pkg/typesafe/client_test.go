@@ -139,3 +139,37 @@ func TestClientIgnoresBlankEnvironmentDefaults(t *testing.T) {
 		t.Fatal("blank environment API key accepted")
 	}
 }
+
+func TestClientRetryConfiguration(t *testing.T) {
+	clientEnvironment(t)
+	policy := DefaultRetryPolicy()
+	c, err := NewClient(ClientOptions{APIKey: "key", Retry: &policy})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	policy.MaxRetries, policy.HTTPStatuses[500] = 0, false
+	if c.retry.MaxRetries != 2 || !c.retry.HTTPStatuses[500] {
+		t.Fatal("client retained caller retry configuration")
+	}
+	other, err := NewClient(ClientOptions{APIKey: "key"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer other.Close()
+	c.retry.HTTPStatuses[500] = false
+	if !other.retry.HTTPStatuses[500] {
+		t.Fatal("default client status maps are shared")
+	}
+	disabled, err := NewClient(ClientOptions{APIKey: "key", Retry: &RetryPolicy{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer disabled.Close()
+	if disabled.retry.MaxRetries != 0 || disabled.retry.ConnectionErrors || disabled.retry.HTTPStatuses != nil {
+		t.Fatal("zero policy did not disable retries")
+	}
+	if invalid, err := NewClient(ClientOptions{APIKey: "key", Retry: &RetryPolicy{MaxRetries: -1}}); err == nil || invalid != nil {
+		t.Fatal("invalid retry policy created a client")
+	}
+}

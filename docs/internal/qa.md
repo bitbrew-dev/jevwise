@@ -73,3 +73,11 @@
 - Independent QA: PASS, 50 repeated targeted tests plus race and vet; no real sleeps or paid API requests.
 - Full fresh tests/race, vet, build, tidy-diff, and whitespace checks passed after stacking.
 - Engine preserves latest response/error, gives caller cancellation precedence, and does not cancel in-flight attempts when the retry budget expires.
+
+## Retry client integration 07c
+
+- Parent: `853b1a3`, reviewed retry-engine stack; branch: `feature/07c-retry-client`.
+- Changed lines: 308 including this ledger; soft-cap exception for explicit header/body replay and override-isolation regressions, below hard 450.
+- Independent QA: PASS, 50 repeated integration tests, race, vet, and build; root repeated full tests/race, tidy-diff, vet/build, and whitespace checks.
+- Constructor/call policies are validated and copied; nil inherits, explicit zero disables, overrides replace rather than merge.
+- HTTP and custom/typed decoding share retries; caller deadline/cancellation wins, per-attempt timeout metadata is preserved, standalone raw decoding never retries.

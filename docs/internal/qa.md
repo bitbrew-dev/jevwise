@@ -192,3 +192,9 @@
 - Baseline: `fa2d472`; branch: `feature/19b2b-mcp-boundaries`; 237 changed lines, below the soft cap.
 - Modern socket disconnect and legacy lifetime cancellation, complete escaped output above 16 MiB, 32 MiB frame limits and terminal writer errors passed source review and implementation gates. Mapped loopback addresses now match actual listener Host values.
 - Maximum 8 MiB decision JSON may yield SSE frames above the SDK client's default 16 MiB; clients need a 32 MiB event limit for maximum-size results. No real decisions, persistent daemon or release/workflow changes.
+
+## MCP foreground runtime 19c1
+
+- Baseline: `6b11eb8`; branch: `feature/19c1-mcp-runtime`; 324 changed lines, hard cap respected.
+- Soft-cap exception for owned-listener startup failures, safe live readiness, independent decision/lifetime contexts, active-call cancellation and bounded graceful shutdown. Independent/root repeated and full gates, race, vet/build/tidy, fixtures, formatting and six cross-builds passed.
+- Ready callbacks and decision services must cooperate with context cancellation; arbitrary blocking callbacks cannot be forcibly interrupted. The caller owns service cleanup. CLI exposure follows in 19c2; no paid calls or persistent daemon.

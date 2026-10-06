@@ -33,7 +33,7 @@
 - No retry or provider switch was made until the user explicitly authorized `git ch` with OpenAI/Luna.
 - All subsequent commit-message generation uses the root configuration's `gpt-5.6-luna` model and explicitly selected OpenAI provider.
 - The approval reviewer rejected `errors.go` / `errors_test.go` diff transmission despite general OpenAI approval. After the user explicitly requested `git ch --verbose` for that staged payload, it was committed successfully. The user subsequently approved the exact remaining source/test/doc file list for OpenAI/Luna transmission.
-- Remaining implementation tickets have not been marked complete. No remote publication or `main` merge has happened.
+- Historical pre-publication checkpoint: the remaining implementation tickets were still pending then. Subsequent reviewed merges are recorded below.
 
 ## Package layout change
 
@@ -44,9 +44,9 @@
 
 ## Merge-phase handoff
 
-- Remote and PR publication are pending user setup.
+- Remote `bitbrew-dev/jevwise` is ready; reviewed PRs are published and merged sequentially after CI.
 - Publish only the oldest unmerged feature PR at a time, with prerequisites already in its base.
-- Retain task-owned worktrees under `/private/tmp/feature-x/` until PRs are merged without errors.
+- Retain task-owned worktrees under `.agent/worktrees/` until their PRs are merged without errors.
 - Then remove only these task-owned worktrees and leftover files; preserve other work and installed tools.
 
 ## Resumed endpoint QA: 2026-10-06
@@ -89,3 +89,12 @@
 - Independent QA: PASS, 50 repeated local HTTP retry/factory-cancellation regressions plus race, vet, and build.
 - Root full tests/race, tidy-diff, vet/build, and whitespace checks passed after rebase; CLI help remains credential/config/network-free.
 - Real Jev choice probabilities are emitted without local inference; placeholders launch no processes. Generic blocking stdin is checked for cancellation before/after reading, not forcibly interrupted.
+
+## Usage and final QA 12
+
+- Parent: `dfdba09`, decision CLI PR 17 merged; branch: `feature/12-docs`; 197 changed lines.
+- Independent README/config/compatibility review: PASS. README SDK snippet compiled without executing it; example TOML loaded through the actual placeholder CLI.
+- Root/decision help passed with a missing explicit config, without credentials or network calls.
+- Full fresh tests/race, tidy-diff, vet/build, and whitespace checks passed; local HTTP fixtures only, no paid requests.
+- Every resumed PR respects the 450-line hard cap. Soft-cap exceptions record deterministic endpoint/retry/input safety coverage.
+- Final source/module/CLI behavior and remaining skill/version/update follow-ups are documented. Cleanup follows successful merge, preserving the private spec and unrelated files.

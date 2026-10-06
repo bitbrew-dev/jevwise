@@ -1,0 +1,7 @@
+# Optional CLI configuration. Prefer an environment variable for credentials.
+# Copy to ~/.config/ts-jev/config.toml, or select with --config.
+api_key = ""
+base_url = "https://api.typesafe.ai"
+model = "jev-latest"
+provider = "jev"
+timeout = "10s"

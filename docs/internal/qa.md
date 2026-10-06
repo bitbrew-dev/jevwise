@@ -65,3 +65,11 @@
 - Independent QA and pinned Python audit passed; hexadecimal numeric retry headers are rejected to match Python.
 - Fresh full tests/race, vet, build, tidy-diff, and whitespace checks passed after rebase.
 - Go adaptations: nanosecond jitter, finite duration range, standard HTTP-date formats, zero policy disables retries, and zero budget is unbounded.
+
+## Retry engine 07b
+
+- Parent: `b572a20`, reviewed retry-policy stack; branch: `feature/07b-retry-runner`.
+- Changed lines: 305 including this ledger; soft-cap exception for cancellation and budget boundary coverage, below hard 450.
+- Independent QA: PASS, 50 repeated targeted tests plus race and vet; no real sleeps or paid API requests.
+- Full fresh tests/race, vet, build, tidy-diff, and whitespace checks passed after stacking.
+- Engine preserves latest response/error, gives caller cancellation precedence, and does not cancel in-flight attempts when the retry budget expires.

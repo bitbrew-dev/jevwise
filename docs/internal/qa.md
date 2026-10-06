@@ -291,3 +291,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Same-executable launch uses fixed argv and anonymous stdin. Pre-ACK failure cleans only the newly owned process; post-ACK uncertainty never kills it or permits blind retries. No paid calls, user daemon or release changes.
+
+## MCP pure configuration validation 19f2a1
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Already-loaded values validate without files, environment or flags. Existing load precedence and optional credentials remain unchanged. No paid calls, user daemon or release changes.

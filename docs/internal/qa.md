@@ -337,3 +337,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Synthetic same-binary child fixtures cover terminal independence, duplicate and port conflicts, authenticated status/stop and startup cleanup. Exact owned exit markers and empty runtime state verify cleanup, without PID-based control. No paid calls, user daemon or release changes.
+
+## MCP final usage and lifecycle QA 19g4
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Documentation matches the integrated CLI and security boundaries. Synthetic process fixtures cover independent lifetime, duplicate start, authenticated stop and conservative failure cleanup. Task-owned artifacts are removed only after final merged gates pass; published v1.0.0 stays unchanged. No paid calls, user daemon or release changes.

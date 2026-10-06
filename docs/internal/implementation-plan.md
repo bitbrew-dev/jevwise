@@ -158,7 +158,7 @@ Release/update defaults (Windows binaries explicitly confirmed by the user): `je
 - [x] 19e2b - Mutual control authentication: fresh nonce and domain-separated request/response HMAC proofs; never transmit the private management key or trust an echoed instance. Depends on 19e2, before CLI exposure.
 - [x] 19e3 - Runtime routing: route only exact management endpoints separately from agent MCP authentication. Depends on 19e1.
 - [x] 19f1a - Private bootstrap: bounded strict stdin framing, prepared-child lease and acknowledgement, independent child lifetime. Depends on existing configuration values and 19e2; callers must supply a pure validator.
-- [ ] 19f1b - Detached launch: Unix/Windows same-executable detachment, anonymous stdin, bounded startup and cooperative pre-ACK cleanup; never kill post-ACK uncertainty. Depends on 19f1a.
+- [x] 19f1b - Detached launch: Unix/Windows same-executable detachment, anonymous stdin, bounded startup and cooperative pre-ACK cleanup; never kill post-ACK uncertainty. Depends on 19f1a.
 - [ ] 19f2a1 - Pure configuration validation: validate already-loaded values without environment/files/flags. Depends on existing configuration package.
 - [ ] 19f2a2 - Bootstrap validation: canonical local metadata, distinct credentials and fresh crypto-random management identity, no effects. Depends on 19f2a1/19e1.
 - [ ] 19f2b - Child assembly: hidden child command, owned storage/listener/service, publication then ACK, and no paid decision before running. Depends on publication regressions, routing and bootstrap.

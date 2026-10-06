@@ -7,7 +7,8 @@ import (
 	"syscall"
 )
 
-func storageSupported() error { return nil }
+func storageSupported() error        { return nil }
+func mkdirPrivate(path string) error { return os.Mkdir(path, 0o700) }
 func privateInfo(info os.FileInfo, directory bool) bool {
 	if info == nil {
 		return false

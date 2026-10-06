@@ -132,3 +132,9 @@
 - Baseline: `60c09b0`; branch: `feature/17a-release-assets`; manual semantic-release unchanged.
 - Native Windows tests use USERPROFILE; trusted tooling/provenance, no-redirect publishing and manifest-last safety justify the soft-cap exception.
 - Independent/root fixture tests, actionlint/shellcheck, Go tests/race/vet/build/tidy, and six actual offline builds/native smoke passed; 410 lines. Publication was not invoked; all three native CI jobs must pass before merge.
+
+## Release checks 17b
+
+- Baseline: `3f6671d`; branch: `feature/17b-release-check`; metadata foundation only; CLI registration split into 17c.
+- Soft-cap exception: bounded transport, strict uint64 versions, client isolation, cancellation and safe cause/closure coverage; CLI split into 17c preserves readability.
+- Independent/root tests, repeated/race tests, vet/build/tidy and formatting passed; 390 changed lines. Dedicated idle/TLS/dial bounds, caller-controlled total deadline; no real API or paid requests in QA.

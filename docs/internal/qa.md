@@ -327,3 +327,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Status and stop skip upstream configuration, service creation, agent tokens and ownership acquisition. Fixtures use production mutual HMAC authentication, not raw management credentials. No paid calls, user daemon or release changes.
+
+## MCP background parent CLI 19f2c2
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Parent launch validates before effects and verifies authenticated preparation plus publication before ACK. Only an authenticated running duplicate yields an endpoint; prepared instances require waiting. Uncertain started children are never blindly retried. No paid calls, user daemon or release changes.

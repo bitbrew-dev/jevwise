@@ -256,3 +256,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Atomic no-overwrite publication and cleanup certify every owned alias, exact contents and full privacy even during two-link staging. Independent aggregate-focused QA matches frozen feature files; unsafe exchanged or modified state is preserved. No paid calls, user daemon or release changes.
+
+## MCP publication privacy regressions 19d3c
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Tests cover transient privacy changes, exchanged aliases and unexpected hardlinks without weakening normal validation. Independent aggregate-focused QA matched all owned fixtures. No paid calls, user daemon or release changes.

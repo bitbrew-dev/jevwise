@@ -33,6 +33,8 @@ func TestMCPTokenFileOverridesEnvironmentAndAcceptsRelativePath(t *testing.T) {
 	decisionEnvironment(t)
 	t.Setenv("JEV_MCP_TOKEN", "invalid environment token")
 	path := cliTokenFile(t, "private-file-token\r\n")
+	// Keep relative-path coverage on the token file volume on Windows.
+	t.Chdir(filepath.Dir(path))
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)

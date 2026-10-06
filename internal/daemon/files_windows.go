@@ -12,6 +12,17 @@ import (
 func privateReadFlags() int { return os.O_RDONLY }
 
 func privateHandle(file *os.File, directory, protected bool) bool {
+	return privateHandleExpected(file, directory, protected, 1)
+}
+
+func privateHandleLinks(file *os.File, expected uint32) bool {
+	return privateHandleExpected(file, false, false, expected)
+}
+
+func privateHandleExpected(file *os.File, directory, protected bool, expected uint32) bool {
+	if expected != 1 && expected != 2 || directory && expected != 1 {
+		return false
+	}
 	if file == nil {
 		return false
 	}
@@ -21,17 +32,24 @@ func privateHandle(file *os.File, directory, protected bool) bool {
 	}
 	valid := false
 	err = raw.Control(func(fd uintptr) {
-		valid = privateWindowsHandle(windows.Handle(fd), directory, protected)
+		valid = privateWindowsHandleExpected(windows.Handle(fd), directory, protected, expected)
 	})
 	return err == nil && valid
 }
 
 func privateWindowsHandle(handle windows.Handle, directory, protected bool) bool {
+	return privateWindowsHandleExpected(handle, directory, protected, 1)
+}
+
+func privateWindowsHandleExpected(handle windows.Handle, directory, protected bool, expected uint32) bool {
+	if expected != 1 && expected != 2 || directory && expected != 1 {
+		return false
+	}
 	var info windows.ByHandleFileInformation
 	if windows.GetFileInformationByHandle(handle, &info) != nil || info.FileAttributes&windows.FILE_ATTRIBUTE_REPARSE_POINT != 0 {
 		return false
 	}
-	if (info.FileAttributes&windows.FILE_ATTRIBUTE_DIRECTORY != 0) != directory || (!directory && info.NumberOfLinks != 1) {
+	if (info.FileAttributes&windows.FILE_ATTRIBUTE_DIRECTORY != 0) != directory || (!directory && info.NumberOfLinks != expected) {
 		return false
 	}
 	user, err := windows.GetCurrentProcessToken().GetTokenUser()

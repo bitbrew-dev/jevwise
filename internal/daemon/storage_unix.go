@@ -10,6 +10,13 @@ import (
 func storageSupported() error        { return nil }
 func mkdirPrivate(path string) error { return os.Mkdir(path, 0o700) }
 func privateInfo(info os.FileInfo, directory bool) bool {
+	return privateInfoLinks(info, directory, 1)
+}
+
+func privateInfoLinks(info os.FileInfo, directory bool, expected uint32) bool {
+	if expected != 1 && expected != 2 || directory && expected != 1 {
+		return false
+	}
 	if info == nil {
 		return false
 	}
@@ -20,5 +27,5 @@ func privateInfo(info os.FileInfo, directory bool) bool {
 	if directory {
 		return info.IsDir() && info.Mode().Perm() == 0o700
 	}
-	return info.Mode().IsRegular() && info.Mode().Perm() == 0o600 && stat.Nlink == 1
+	return info.Mode().IsRegular() && info.Mode().Perm() == 0o600 && uint64(stat.Nlink) == uint64(expected)
 }

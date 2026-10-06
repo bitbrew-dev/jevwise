@@ -245,3 +245,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Strict bounded metadata and private-key reads reject malformed, unsafe and partial state. Presence alone never proves liveness; no process IDs or credentials enter public metadata. No paid calls, user daemon or release changes.
+
+## MCP publication link privacy 19d3a2
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Pinned validation preserves all owner, mode, ACL and reparse checks for exactly one or two aliases. A two-link count is not ownership: publication must verify both owned names. No paid calls, user daemon or release changes.

@@ -223,3 +223,9 @@
 - Windows exclusive creation is relative to a pinned root and gives the current user explicit ownership and a protected user-only DACL. Directories use directory-specific desired access. Unix files use exclusive read/write handles for later publication.
 - Native Windows CI is mandatory before merge; storage remains unsupported on Windows until 19d2a2. No user service, real decision or release was started.
 - Soft-cap exception: native Windows exposed a Unix-only rename assumption. The fixture now verifies both permitted rename and exact sharing-violation anchoring, without skipping or weakening privacy checks. All exact-head checks must rerun for the corrected fixture.
+
+## MCP Windows storage privacy 19d2a2
+
+- 340 source/test lines plus plan/QA, hard cap respected. Exact opened-handle current-user ownership, one protected user-only root DACL, inheritance, reparse and hardlink checks enable Windows storage.
+- Independent review and root full gates, six cross-builds and both Windows test compilations passed. Native Windows exact-head fixtures are required before merge.
+- Existing unsafe permissions are never repaired. This remains a storage foundation without background CLI exposure, paid requests or release changes.

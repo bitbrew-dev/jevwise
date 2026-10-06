@@ -5,8 +5,10 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/bitbrew-dev/jevwise/internal/daemon"
 	"github.com/bitbrew-dev/jevwise/internal/mcpserver"
 	"github.com/bitbrew-dev/jevwise/internal/service"
 	"github.com/spf13/cobra"
@@ -15,7 +17,7 @@ import (
 type mcpRunner func(context.Context, service.DecisionService, time.Duration, mcpserver.RunOptions) error
 
 func newMCP(factory ServiceFactory, run mcpRunner) *cobra.Command {
-	var address string
+	var address, tokenFile string
 	cmd := &cobra.Command{Use: "mcp", Short: "Serve the decide tool over authenticated local MCP HTTP",
 		Args: func(_ *cobra.Command, args []string) error {
 			if len(args) != 0 {
@@ -33,6 +35,16 @@ func newMCP(factory ServiceFactory, run mcpRunner) *cobra.Command {
 				return err
 			}
 			token := os.Getenv("JEV_MCP_TOKEN")
+			if cmd.Flags().Changed("token-file") {
+				path, err := filepath.Abs(tokenFile)
+				if err != nil || tokenFile == "" {
+					return errors.New("invalid MCP token file path")
+				}
+				token, err = daemon.ReadAgentToken(path)
+				if err != nil {
+					return err
+				}
+			}
 			if err := mcpserver.ValidateToken(token); err != nil {
 				return errors.New("JEV_MCP_TOKEN must contain a valid MCP bearer token")
 			}
@@ -80,5 +92,6 @@ func newMCP(factory ServiceFactory, run mcpRunner) *cobra.Command {
 			return nil
 		}}
 	cmd.Flags().StringVar(&address, "listen", "127.0.0.1:8080", "Literal loopback IP:port for /mcp; token from JEV_MCP_TOKEN")
+	cmd.PersistentFlags().StringVar(&tokenFile, "token-file", "", "Read an owner-private bearer token file instead of JEV_MCP_TOKEN")
 	return cmd
 }

@@ -106,3 +106,11 @@
 - Independent review/repeated tests/race/vet passed; root full tests/race, tidy-diff, vet/build, and whitespace checks passed.
 - Empty-front-matter panic found during root review was corrected and regression-tested. No credentials/cookies/redirects, body limits and closure verified.
 - Command registration waits for ticket 14, preserving the confirmed local-install default. Fixtures only; no paid requests or real downloads in QA.
+
+## Skill targets 14
+
+- Parent: reviewed foundation `e269f98`, merged by PR 19; branch: `feature/14-skill-targets`; 449 changed lines including docs.
+- Soft-cap exception for rooted filesystem safety, injected write/sync/close/publication failures, and race-safe no-overwrite tests; hard 450 respected.
+- Independent QA and root full tests/race, tidy-diff, vet/build, formatting, and credential-free help/online smoke checks passed.
+- Default `.agent`, explicit `.agent`/`.claude`, `--force` hint, static symlink rejection, inode-preserving force, staging cleanup, and cwd production bridge covered.
+- Native Unix force only; Windows force and nonnative install limitations documented. Prepublication failures preserve prior file; postpublication cancellation/cleanup errors do not trigger unsafe rollback.

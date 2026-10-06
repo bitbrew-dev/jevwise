@@ -30,6 +30,11 @@ func (b *skillBody) Close() error { b.closed = true; return nil }
 
 func skillRoot(fetch skillFetch, install skillInstall) *cobra.Command {
 	root := NewRoot()
+	for _, command := range root.Commands() {
+		if command.Name() == "skill" {
+			root.RemoveCommand(command)
+		}
+	}
 	root.AddCommand(newSkill(fetch, install))
 	return root
 }
@@ -109,7 +114,7 @@ func TestSkillModesHelpAndLocalCallbacks(t *testing.T) {
 		return bytes.Clone(validSkill), nil
 	}
 	installed := 0
-	install := func(_ context.Context, data []byte) error {
+	install := func(_ context.Context, data []byte, _ string, _ bool) error {
 		installed++
 		if !bytes.Equal(data, validSkill) {
 			t.Error("installed bytes changed")
@@ -133,7 +138,7 @@ func TestSkillModesHelpAndLocalCallbacks(t *testing.T) {
 		t.Fatal("hidden Jev/help invalid", err)
 	}
 	for _, args := range [][]string{{"skill", "private-content"}, {"skill", "--online", "--local"}, {"skill", "--online=false"}, {"skill", "--local=false"}, {"skill", "--jev=false"}, {"skill", "--online", "--provider", "claude"}, {"skill", "--timeout", "0s"}} {
-		if out, _, err := execute(skillRoot(func(context.Context) ([]byte, error) { t.Fatal("invalid mode fetched"); return nil, nil }, func(context.Context, []byte) error { t.Fatal("invalid mode installed"); return nil }), args...); err == nil || out != "" || strings.Contains(err.Error(), "private-content") {
+		if out, _, err := execute(skillRoot(func(context.Context) ([]byte, error) { t.Fatal("invalid mode fetched"); return nil, nil }, func(context.Context, []byte, string, bool) error { t.Fatal("invalid mode installed"); return nil }), args...); err == nil || out != "" || strings.Contains(err.Error(), "private-content") {
 			t.Fatal("invalid mode accepted or leaked", err)
 		}
 	}
@@ -152,7 +157,7 @@ func TestSkillSafeCallbacksAndCancellation(t *testing.T) {
 			}
 			return validSkill, nil
 		}
-		install := func(context.Context, []byte) error { return cause }
+		install := func(context.Context, []byte, string, bool) error { return cause }
 		if _, _, err := execute(skillRoot(fetch, install), "skill"); !errors.Is(err, cause) || strings.Contains(err.Error(), "private-content") {
 			t.Fatal("callback failure unsafe", err)
 		}
@@ -166,7 +171,7 @@ func TestSkillSafeCallbacksAndCancellation(t *testing.T) {
 	}
 	ctx, cancel = context.WithCancel(context.Background())
 	defer cancel()
-	cmd = skillRoot(func(context.Context) ([]byte, error) { cancel(); return validSkill, nil }, func(context.Context, []byte) error { t.Fatal("cancelled fetch installed"); return nil })
+	cmd = skillRoot(func(context.Context) ([]byte, error) { cancel(); return validSkill, nil }, func(context.Context, []byte, string, bool) error { t.Fatal("cancelled fetch installed"); return nil })
 	cmd.SetArgs([]string{"skill"})
 	if err := cmd.ExecuteContext(ctx); !errors.Is(err, context.Canceled) {
 		t.Fatal("fetch cancellation lost", err)
@@ -190,7 +195,7 @@ func TestSkillInjectedCancellationAndInvalidContent(t *testing.T) {
 	if _, err := newSkillFetch(nil)(nil); err == nil {
 		t.Fatal("nil context accepted")
 	}
-	install := func(context.Context, []byte) error { t.Fatal("invalid/nil fetch installed"); return nil }
+	install := func(context.Context, []byte, string, bool) error { t.Fatal("invalid/nil fetch installed"); return nil }
 	for _, fetch := range []skillFetch{nil, func(context.Context) ([]byte, error) { return []byte("invalid"), nil }} {
 		if _, _, err := execute(skillRoot(fetch, install), "skill"); err == nil {
 			t.Fatal("invalid injected fetch accepted")
@@ -201,9 +206,55 @@ func TestSkillInjectedCancellationAndInvalidContent(t *testing.T) {
 func TestSkillPostInstallCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	cmd := skillRoot(func(context.Context) ([]byte, error) { return validSkill, nil }, func(context.Context, []byte) error { cancel(); return nil })
+	cmd := skillRoot(func(context.Context) ([]byte, error) { return validSkill, nil }, func(context.Context, []byte, string, bool) error { cancel(); return nil })
 	cmd.SetArgs([]string{"skill"})
 	if err := cmd.ExecuteContext(ctx); !errors.Is(err, context.Canceled) {
 		t.Fatal("post-install cancellation lost", err)
+	}
+}
+
+func TestSkillTargetFlagsAndRegistration(t *testing.T) {
+	for _, tc := range []struct {
+		args   []string
+		target string
+		force  bool
+	}{
+		{nil, ".agent", false}, {[]string{"--agent"}, ".agent", false}, {[]string{"--claude"}, ".claude", false},
+		{[]string{"--claude", "--force"}, ".claude", true}, {[]string{"--force=false"}, ".agent", false},
+	} {
+		called := false
+		cmd := skillRoot(func(context.Context) ([]byte, error) { return validSkill, nil }, func(_ context.Context, _ []byte, target string, force bool) error {
+			called = true
+			if target != tc.target || force != tc.force {
+				t.Error("target/force mapping changed")
+			}
+			return nil
+		})
+		if _, _, err := execute(cmd, append([]string{"skill"}, tc.args...)...); err != nil || !called {
+			t.Fatal("local target failed", err)
+		}
+	}
+	for _, args := range [][]string{
+		{"--agent=false"}, {"--claude=false"}, {"--agent", "--claude"},
+		{"--online", "--agent"}, {"--online", "--claude"}, {"--online", "--force"}, {"--online", "--force=false"},
+	} {
+		cmd := skillRoot(func(context.Context) ([]byte, error) { t.Fatal("invalid target fetched"); return nil, nil }, func(context.Context, []byte, string, bool) error { t.Fatal("invalid target installed"); return nil })
+		if out, _, err := execute(cmd, append([]string{"skill"}, args...)...); err == nil || out != "" {
+			t.Fatal("invalid target had effects", err)
+		}
+	}
+	out, _, err := execute(NewRoot(), "skill", "--online", "--config", "/missing", "--api-key", "", "--timeout", "invalid")
+	if err != nil || out != skillURL+"\n" {
+		t.Fatal("registered online skill loaded config or credentials", err)
+	}
+}
+
+func TestSkillExistingFileForceHint(t *testing.T) {
+	cmd := skillRoot(func(context.Context) ([]byte, error) { return validSkill, nil }, func(context.Context, []byte, string, bool) error {
+		return &decisionError{"private-content", errSkillExists}
+	})
+	out, _, err := execute(cmd, "skill")
+	if out != "" || !errors.Is(err, errSkillExists) || !strings.Contains(err.Error(), "--force") || strings.Contains(err.Error(), "private-content") {
+		t.Fatal("existing file hint/cause unsafe", err)
 	}
 }

@@ -84,6 +84,14 @@ The release-assets workflow attaches raw CLI binaries and `SHA256SUMS` to an exi
 - Native CI tests Linux, macOS, and Windows CLI execution. Windows arm64 is cross-built, not claimed as natively executed.
 - On Windows, default config discovery uses `%USERPROFILE%\.config\ts-jev\config.toml` when `XDG_CONFIG_HOME` is unset.
 
+## Replacement safety (foundation)
+
+- Automatic replacement is limited to standalone Linux/macOS binaries. Windows updates remain manual; CLI installation is not enabled yet.
+- A per-executable `.<binary-name>.jev-update-lock` directory serializes cooperating updates. Crashed/stale locks require manual inspection and removal, never automatic deletion.
+- Guards reject unsafe returned-path targets and changed versions. Only permission bits are preserved, not group ownership, ACLs or xattrs. A complete same-directory staging file is permissioned, synced and closed before renaming; failures before publication preserve the original. Errors after publication do not roll it back.
+- Filesystem checks assume ordinary cooperative local storage, not hostile concurrent writers, mount changes or power-loss durability. Context cancellation is checked at safe boundaries; filesystem calls are not interruptible.
+- Use your package manager for managed installs. `os.Executable` may resolve a symlink launch to its physical target, so the updater cannot reliably identify every symlink-invoked or package-managed installation.
+
 ## CLI configuration
 
 Precedence: **changed flags > nonblank environment > TOML > defaults**.

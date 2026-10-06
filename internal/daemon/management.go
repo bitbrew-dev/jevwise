@@ -147,3 +147,10 @@ func managementError(w http.ResponseWriter, status int) {
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte("{\"error\":\"management request rejected\"}\n"))
 }
+
+// IsRunning admits decisions only after ACK and before a stop request.
+func (m *Management) IsRunning() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.state == "running"
+}

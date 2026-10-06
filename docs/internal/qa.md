@@ -81,3 +81,11 @@
 - Independent QA: PASS, 50 repeated integration tests, race, vet, and build; root repeated full tests/race, tidy-diff, vet/build, and whitespace checks.
 - Constructor/call policies are validated and copied; nil inherits, explicit zero disables, overrides replace rather than merge.
 - HTTP and custom/typed decoding share retries; caller deadline/cancellation wins, per-attempt timeout metadata is preserved, standalone raw decoding never retries.
+
+## Decision CLI 11
+
+- Parent: `6ee02e5`, retry integration PR 16 merged; branch: `feature/11-decide`.
+- Changed lines: 408 including progress and this ledger; soft-cap exception for input/error-safety and end-to-end retry coverage, below hard 450.
+- Independent QA: PASS, 50 repeated local HTTP retry/factory-cancellation regressions plus race, vet, and build.
+- Root full tests/race, tidy-diff, vet/build, and whitespace checks passed after rebase; CLI help remains credential/config/network-free.
+- Real Jev choice probabilities are emitted without local inference; placeholders launch no processes. Generic blocking stdin is checked for cancellation before/after reading, not forcibly interrupted.

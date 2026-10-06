@@ -12,7 +12,14 @@ import (
 // NewRoot returns a fresh command tree without reading configuration or credentials.
 // Service commands should call LoadConfig in RunE, not in a persistent hook,
 // so help and completion remain usable without a valid configuration.
-func NewRoot() *cobra.Command {
+func NewRoot() *cobra.Command { return NewRootWithFactory(defaultServiceFactory) }
+
+// NewRootWithFactory injects service creation while preserving isolated command state.
+// A nil factory uses the default SDK-backed factory. Creation is deferred until RunE.
+func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
+	if factory == nil {
+		factory = defaultServiceFactory
+	}
 	cmd := &cobra.Command{
 		Use: "jev", Short: "Make decisions with Jev",
 		SilenceUsage: true, SilenceErrors: true,
@@ -35,6 +42,7 @@ func NewRoot() *cobra.Command {
 	flags.String("base-url", "https://api.typesafe.ai", "Jev API base URL")
 	flags.String("model", "jev-latest", "Jev model")
 	flags.String("timeout", "10s", "Operation timeout, for example 10s")
+	cmd.AddCommand(newDecide(factory))
 	return cmd
 }
 

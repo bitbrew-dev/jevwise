@@ -21,7 +21,7 @@ type ManagementStatus struct {
 	State    string `json:"state"`
 }
 
-// Management never signals a PID or accepts the agent's MCP credential.
+// Management mutually authenticates control without transmitting its private key.
 type Management struct {
 	address  string
 	instance string
@@ -88,15 +88,20 @@ func (m *Management) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		managementError(w, http.StatusForbidden)
 		return
 	}
-	auth := r.Header.Values("Authorization")
+	nonces := r.Header.Values(nonceHeader)
+	proofs := r.Header.Values(proofHeader)
 	instances := r.Header.Values(instanceHeader)
-	if len(auth) != 1 || subtle.ConstantTimeCompare([]byte(auth[0]), []byte("Bearer "+m.token)) != 1 {
-		w.Header().Set("WWW-Authenticate", "Bearer")
+	if len(r.Header.Values("Authorization")) != 0 || len(nonces) != 1 || !validControlHex(nonces[0]) || len(proofs) != 1 || !validControlHex(proofs[0]) {
+		w.Header().Set("WWW-Authenticate", "Jev-HMAC")
 		managementError(w, http.StatusUnauthorized)
 		return
 	}
 	if len(instances) != 1 || subtle.ConstantTimeCompare([]byte(instances[0]), []byte(m.instance)) != 1 {
 		managementError(w, http.StatusConflict)
+		return
+	}
+	if !verifiedProof(proofs[0], requestProof(m.token, r.Method, r.URL.EscapedPath(), m.instance, nonces[0])) {
+		managementError(w, http.StatusUnauthorized)
 		return
 	}
 	path := r.URL.EscapedPath()
@@ -127,6 +132,7 @@ func (m *Management) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	if stop {
 		defer m.cancel()
 	}
+	w.Header().Set(proofHeader, responseProof(m.token, r.Method, path, m.instance, nonces[0], status.State))
 	body, _ := json.Marshal(status) // This concrete response contains only strings.
 	body = append(body, '\n')
 	w.Header().Set("Content-Length", strconv.Itoa(len(body)))

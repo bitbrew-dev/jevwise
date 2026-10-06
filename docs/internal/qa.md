@@ -271,3 +271,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Dedicated local requests reject redirects, proxies, malformed or oversized responses and cancellation. Mutual HMAC proofs remain mandatory before CLI exposure. No paid calls, user daemon or release changes.
+
+## MCP mutual control proofs 19e2b
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Fresh domain-separated request and response HMAC proofs never transmit the management key. Response replay and port impersonation are refused; signed requests are not nonce-cached, and stop is terminal and idempotent. No paid calls, user daemon or release changes.

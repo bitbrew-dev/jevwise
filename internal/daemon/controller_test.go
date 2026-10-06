@@ -141,7 +141,7 @@ func TestControllerDoesNotRedirect(t *testing.T) {
 
 func TestControllerStopRequiresStopping(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != "/_jev/stop" || r.Header.Get(instanceHeader) != controllerInstance || r.Header.Get("Authorization") != "Bearer "+controllerToken {
+		if r.Method != http.MethodPost || r.URL.Path != "/_jev/stop" || r.Header.Get(instanceHeader) != controllerInstance || r.Header.Get("Authorization") != "" || !verifiedProof(r.Header.Get(proofHeader), requestProof(controllerToken, r.Method, r.URL.EscapedPath(), controllerInstance, r.Header.Get(nonceHeader))) {
 			t.Error("unexpected stop request")
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -187,8 +187,8 @@ func TestControllerDeadlineAndConfiguration(t *testing.T) {
 
 type canceledResponseTransport struct{ cancel context.CancelFunc }
 
-func (t canceledResponseTransport) RoundTrip(*http.Request) (*http.Response, error) {
-	return &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": {"application/json"}},
+func (t canceledResponseTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	return &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": {"application/json"}, proofHeader: {responseProof(controllerToken, r.Method, r.URL.EscapedPath(), controllerInstance, r.Header.Get(nonceHeader), "running")}},
 		Body: io.NopCloser(canceledResponseReader{strings.NewReader(statusJSON("running")), t.cancel})}, nil
 }
 

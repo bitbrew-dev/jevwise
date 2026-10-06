@@ -155,7 +155,7 @@ Release/update defaults (Windows binaries explicitly confirmed by the user): `je
 - [x] 19d3c - Publication regressions: transient ACL changes, exchanged aliases and unexpected hardlinks. Depends on 19d3b, before child exposure.
 - [x] 19e1 - Management endpoints: separate authenticated prepared/running/status/stop lifecycle, safe acknowledgements and graceful cancellation. Depends on state foundations.
 - [x] 19e2 - Management controller: bounded no-proxy/no-redirect local requests with authenticated instance/state verification. Depends on 19e1.
-- [ ] 19e2b - Mutual control authentication: fresh nonce and domain-separated request/response HMAC proofs; never transmit the private management key or trust an echoed instance. Depends on 19e2, before CLI exposure.
+- [x] 19e2b - Mutual control authentication: fresh nonce and domain-separated request/response HMAC proofs; never transmit the private management key or trust an echoed instance. Depends on 19e2, before CLI exposure.
 - [ ] 19e3 - Runtime routing: route only exact management endpoints separately from agent MCP authentication. Depends on 19e1.
 - [ ] 19f1a - Private bootstrap: bounded strict stdin framing, prepared-child lease and acknowledgement, independent child lifetime. Depends on existing configuration values and 19e2; callers must supply a pure validator.
 - [ ] 19f1b - Detached launch: Unix/Windows same-executable detachment, anonymous stdin, bounded startup and cooperative pre-ACK cleanup; never kill post-ACK uncertainty. Depends on 19f1a.

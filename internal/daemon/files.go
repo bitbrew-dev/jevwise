@@ -9,7 +9,7 @@ import (
 const fileLimit = 64 << 10
 
 func storageName(name string) bool {
-	return name == "control.key" || name == "state.json" || name == "daemon.log"
+	return name == "control.key" || name == "state.json" || name == "daemon.log" || name == ".state-stage"
 }
 
 func closeRuntimeFile(file *os.File, closeFn func(*os.File) error) error {

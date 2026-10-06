@@ -301,3 +301,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Canonical metadata, bounded timeout arithmetic, normalized configuration and pairwise-distinct secrets validate without effects. Instance and control identities use cryptographic randomness. No paid calls, user daemon or release changes.
+
+## MCP protected agent token reads 19g1
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Bounded token reads verify pinned ownership, modes, ACLs, identity and single-link privacy before and after reading. Explicit token-file Windows DACLs must be protected; unsafe files are never repaired. No paid calls, user daemon or release changes.

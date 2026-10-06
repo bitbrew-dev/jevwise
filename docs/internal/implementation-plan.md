@@ -162,7 +162,7 @@ Release/update defaults (Windows binaries explicitly confirmed by the user): `je
 - [x] 19f2a1 - Pure configuration validation: validate already-loaded values without environment/files/flags. Depends on existing configuration package.
 - [x] 19f2a2 - Bootstrap validation: canonical local metadata, distinct credentials and fresh crypto-random management identity, no effects. Depends on 19f2a1/19e1.
 - [x] 19f2b - Child assembly: hidden child command, owned storage/listener/service, publication then ACK, and no paid decision before running. Depends on publication regressions, routing and bootstrap.
-- [ ] 19f2b2 - Child failure regressions: additional initialization/EOF cleanup fixtures, before background CLI exposure. Depends on 19f2b.
+- [x] 19f2b2 - Child failure regressions: additional initialization/EOF cleanup fixtures, before background CLI exposure. Depends on 19f2b.
 - [x] 19g1 - Protected agent token: bounded token-file reader with owner/ACL/link/inode validation, fixed safe errors. Depends on platform privacy gates.
 - [x] 19g2 - Token-file CLI: explicit file overrides environment, help/management skip token reads, lazy validation before factory. Depends on 19g1.
 - [ ] 19f2c1 - Management CLI: read-only status/stop without config, service construction, agent token reads, directory creation or ownership acquisition. Depends on 19d1c/19e2.

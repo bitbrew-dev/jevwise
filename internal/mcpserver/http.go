@@ -1,6 +1,7 @@
 package mcpserver
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"crypto/subtle"
 	"errors"
@@ -88,6 +89,25 @@ func NewHTTP(server *mcp.Server, address, token string) (http.Handler, error) {
 			http.Error(w, "MCP server is busy", http.StatusServiceUnavailable)
 			return
 		}
+		if r.Body == nil {
+			r.Body = http.NoBody
+		}
+		body, err := io.ReadAll(io.LimitReader(r.Body, inputLimit+1))
+		if len(body) > inputLimit {
+			http.Error(w, "MCP request rejected", http.StatusRequestEntityTooLarge)
+			return
+		}
+		if err != nil || r.Context().Err() != nil {
+			http.Error(w, "MCP request rejected", http.StatusBadRequest)
+			return
+		}
+		// Even legacy revisions cannot batch paid decisions through one slot.
+		if trimmed := bytes.TrimSpace(body); len(trimmed) > 0 && trimmed[0] == '[' {
+			http.Error(w, "MCP request rejected", http.StatusBadRequest)
+			return
+		}
+		r.Body = io.NopCloser(bytes.NewReader(body))
+		r.ContentLength = int64(len(body))
 		writer := &httpPrivacyWriter{ResponseWriter: w}
 		transport.ServeHTTP(writer, r)
 		writer.finish()

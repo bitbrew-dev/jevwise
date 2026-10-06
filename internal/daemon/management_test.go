@@ -28,7 +28,8 @@ func testManagement(t *testing.T, cancel context.CancelFunc) *Management {
 func managementRequest(method, path string) *http.Request {
 	r := httptest.NewRequest(method, "http://"+testAddress+path, nil)
 	r.RemoteAddr = "127.0.0.1:40123"
-	r.Header.Set("Authorization", "Bearer "+testControlToken)
+	r.Header.Set(nonceHeader, strings.Repeat("a", 64))
+	r.Header.Set(proofHeader, requestProof(testControlToken, method, path, testInstance, r.Header.Get(nonceHeader)))
 	r.Header.Set(instanceHeader, testInstance)
 	return r
 }
@@ -104,15 +105,21 @@ func TestManagementGuards(t *testing.T) {
 			r.Header.Add("Origin", "http://"+testAddress)
 			r.Header.Add("Origin", "http://"+testAddress)
 		}, 403},
-		{"no authorization", func(r *http.Request) { r.Header.Del("Authorization") }, 401},
+		{"no proof", func(r *http.Request) { r.Header.Del(proofHeader) }, 401},
 		{"agent token", func(r *http.Request) { r.Header.Set("Authorization", "Bearer agent-token") }, 401},
-		{"duplicate authorization", func(r *http.Request) { r.Header.Add("Authorization", "Bearer "+testControlToken) }, 401},
+		{"duplicate proof", func(r *http.Request) { r.Header.Add(proofHeader, r.Header.Get(proofHeader)) }, 401},
 		{"wrong instance", func(r *http.Request) { r.Header.Set(instanceHeader, "another-instance") }, 409},
 		{"no instance", func(r *http.Request) { r.Header.Del(instanceHeader) }, 409},
 		{"duplicate instance", func(r *http.Request) { r.Header.Add(instanceHeader, testInstance) }, 409},
 		{"query", func(r *http.Request) { r.URL.RawQuery = "secret=value" }, 404},
-		{"unknown path", func(r *http.Request) { r.URL.Path = "/mcp" }, 404},
-		{"wrong method", func(r *http.Request) { r.Method = http.MethodGet }, 405},
+		{"unknown path", func(r *http.Request) {
+			r.URL.Path = "/mcp"
+			r.Header.Set(proofHeader, requestProof(testControlToken, r.Method, r.URL.EscapedPath(), testInstance, r.Header.Get(nonceHeader)))
+		}, 404},
+		{"wrong method", func(r *http.Request) {
+			r.Method = http.MethodGet
+			r.Header.Set(proofHeader, requestProof(testControlToken, r.Method, r.URL.EscapedPath(), testInstance, r.Header.Get(nonceHeader)))
+		}, 405},
 		{"request body", func(r *http.Request) { r.ContentLength = 1 }, 400},
 		{"chunked body", func(r *http.Request) { r.TransferEncoding = []string{"chunked"} }, 400},
 	}

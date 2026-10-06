@@ -67,7 +67,12 @@ func (c *Controller) request(ctx context.Context, method, path string) (Manageme
 	if err != nil {
 		return fail(err)
 	}
-	r.Header.Set("Authorization", "Bearer "+c.token)
+	nonce, err := newControlNonce()
+	if err != nil {
+		return fail(err)
+	}
+	r.Header.Set(nonceHeader, nonce)
+	r.Header.Set(proofHeader, requestProof(c.token, method, path, c.instance, nonce))
 	r.Header.Set(instanceHeader, c.instance)
 	r.Header.Set("Accept", "application/json")
 	response, err := c.client.Do(r)
@@ -92,6 +97,10 @@ func (c *Controller) request(ctx context.Context, method, path string) (Manageme
 	}
 	if status.Instance != c.instance || (status.State != "prepared" && status.State != "running" && status.State != "stopping") || (method == http.MethodPost && status.State != "stopping") {
 		return fail(errors.New("unexpected management identity or state"))
+	}
+	proofs := response.Header.Values(proofHeader)
+	if len(proofs) != 1 || !verifiedProof(proofs[0], responseProof(c.token, method, path, c.instance, nonce, status.State)) {
+		return fail(errors.New("unauthenticated management response"))
 	}
 	if err := ctx.Err(); err != nil {
 		return fail(err)

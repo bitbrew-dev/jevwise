@@ -52,6 +52,23 @@ make build-platform GOOS=windows GOARCH=arm64
 - Release linker symbols are `github.com/bitbrew-dev/jevwise/internal/buildinfo.Version`, `.Commit`, and `.Date`.
 - Make produces `build/jev-windows-amd64.exe` or `build/jev-windows-arm64.exe`. Make helpers require Unix shell tools; native Windows PowerShell can use `go build -o jev.exe ./cmd`, then `.\jev.exe --version`.
 
+## Release binaries
+
+The release-assets workflow attaches raw CLI binaries and `SHA256SUMS` to an existing stable [GitHub release](https://github.com/bitbrew-dev/jevwise/releases). It does not create versions or releases.
+
+| Platform | Architectures | Asset pattern |
+| --- | --- | --- |
+| Linux | amd64, arm64 | `jev_vX.Y.Z_linux_ARCH` |
+| macOS | amd64, arm64 | `jev_vX.Y.Z_darwin_ARCH` |
+| Windows | amd64, arm64 | `jev_vX.Y.Z_windows_ARCH.exe` |
+
+- Download the exact OS/architecture asset. Unix users must make a downloaded binary executable; Windows users run the `.exe` directly.
+- `SHA256SUMS` hashes the exact raw binary bytes. Verify the hash before use. Checksums detect corruption, not a compromised publisher; trust remains the repository and GitHub/TLS.
+- Your manual semantic-release workflow still owns release creation. Asset publication runs after a published release, with a manual tag-based fallback. No release is created during development QA.
+- Publication rejects existing target assets and uploads the checksum manifest last. If publication fails midway, inspect and remove incomplete assets manually before retrying; no automatic overwrite/delete/resume occurs.
+- Native CI tests Linux, macOS, and Windows CLI execution. Windows arm64 is cross-built, not claimed as natively executed.
+- On Windows, default config discovery uses `%USERPROFILE%\.config\ts-jev\config.toml` when `XDG_CONFIG_HOME` is unset.
+
 ## CLI configuration
 
 Precedence: **changed flags > nonblank environment > TOML > defaults**.
@@ -158,4 +175,4 @@ Tests use injected services/transports and local HTTP fixtures, not paid API req
 
 - Compatibility is pinned to Python SDK v0.7.2, revision `f078f1e208a0d885154dc758344ae4fce77ac168`.
 - [Compatibility notes](docs/internal/compatibility.md) describe Go-specific validation, ownership, decoding, and retry differences.
-- Remaining follow-ups: release binaries/checking and verified self-update. These features are not implemented yet.
+- Remaining follow-ups: release checking and verified self-update. These features are not implemented yet.

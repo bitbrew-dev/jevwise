@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +19,9 @@ func cleanEnv(t *testing.T) {
 	}
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", os.Getenv("HOME"))
+	}
 }
 
 func writeConfig(t *testing.T, path, content string) string {
@@ -52,6 +56,9 @@ func TestDefaultsAndDiscovery(t *testing.T) {
 		t.Fatalf("HOME: %+v %v", got, err)
 	}
 	t.Setenv("HOME", "")
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", "")
+	}
 	if _, err = Load("", nil); err == nil {
 		t.Fatal("expected discovery error without HOME")
 	}

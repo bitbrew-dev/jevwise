@@ -4,7 +4,9 @@ package cli
 import (
 	"errors"
 
+	"github.com/bitbrew-dev/jevwise/internal/buildinfo"
 	"github.com/bitbrew-dev/jevwise/internal/config"
+	"github.com/bitbrew-dev/jevwise/internal/update"
 	"github.com/phuslu/log"
 	"github.com/spf13/cobra"
 )
@@ -51,6 +53,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	flags.String("model", "jev-latest", "Jev model")
 	flags.String("timeout", "10s", "Operation timeout, for example 10s")
 	cmd.AddCommand(newVersion())
+	cmd.AddCommand(newUpdate(update.NewClient(nil).Latest, buildinfo.Version))
 	cmd.AddCommand(newDecide(factory))
 	cmd.AddCommand(newSkill(newSkillFetch(nil), installSkill))
 	return cmd

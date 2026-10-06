@@ -6,14 +6,23 @@ import (
 	"runtime"
 )
 
+// Update stamps survive stripped, path-trimmed release builds for passive inspection.
+const UpdateStampPrefix = "JEVWISE_UPDATE_V1["
+const UpdateStampSuffix = "]JEVWISE_UPDATE_END"
+
 var (
-	Version = "dev"
-	Commit  = "unknown"
-	Date    = "unknown"
+	Version     = "dev"
+	Commit      = "unknown"
+	Date        = "unknown"
+	UpdateStamp = ""
 )
 
 // String formats the same deterministic human-readable output for all commands.
 func String() string {
+	version := Version
+	if UpdateStamp != "" && UpdateStamp != UpdateStampPrefix+Version+UpdateStampSuffix {
+		version = "unknown"
+	}
 	return fmt.Sprintf("jev %s\ncommit: %s\nbuilt: %s\ngo: %s\nplatform: %s/%s\n",
-		Version, Commit, Date, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+		version, Commit, Date, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 }

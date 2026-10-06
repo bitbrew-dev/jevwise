@@ -100,6 +100,7 @@ def build(metadata, source, directory):
     directory.mkdir(parents=True, exist_ok=False)
     flags = "-s -w " + " ".join(f"-X {BUILDINFO}.{key}={metadata[field]}"
                                  for key, field in (("Version", "tag"), ("Commit", "commit"), ("Date", "date")))
+    flags += f" -X {BUILDINFO}.UpdateStamp=JEVWISE_UPDATE_V1[{metadata['tag']}]JEVWISE_UPDATE_END"
     for (system, arch), name in zip(PLATFORMS, names):
         env = dict(os.environ, CGO_ENABLED="0", GOOS=system, GOARCH=arch)
         run(["go", "build", "-mod=readonly", "-trimpath", "-ldflags", flags, "-o", str(directory / name), "./cmd"], cwd=source, env=env)

@@ -150,3 +150,9 @@
 - Baseline: `236ad86`; branch: `feature/18a-verified-download`; 446 changed lines, hard cap respected.
 - Soft-cap exception for strict manifest/metadata parsing, exact-size bounds, restricted redirects and error/cancellation coverage; replacement and CLI integration stay separate.
 - Independent/root full and repeated tests, race, vet/build/tidy, fixtures and formatting passed; native offline help and six cross-builds passed. Fixtures only, no real downloads or release calls; no executable writes.
+
+## Update version guards 18b1
+
+- Baseline: `7920f03`; branch: `feature/18b1-update-version-guard`; 434 changed lines, hard cap respected.
+- Soft-cap exception for passive binary/stamp inspection, checksum/version/platform guards, and actual trimmed/native Make regressions. QA found duplicate stamp copies in untrimmed Make output; adding `-trimpath` fixed it without weakening duplicate rejection.
+- Independent/root full/repeated tests, race, vet/build/tidy, fixtures and formatting passed; six stripped/trimmed builds and linked Make smoke passed. Guards never execute inspected binaries; no release requests, replacement or publication occurred.

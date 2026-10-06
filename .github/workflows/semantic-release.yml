@@ -16,7 +16,7 @@ jobs:
   semantic-release:
     name: semantic-release
     if: ${{ github.event.inputs.prompt == 'true' }}
-    uses: bitbrew-dev/reusable-workflows/.github/workflows/semantic-release.yml@main
+    uses: bitbrew-dev/r-workflows/.github/workflows/semantic-release.yml@main
     # uses: bitbrew-dev/r-workflows/.github/workflows/semantic-release.yml@main
     permissions:
       contents: read

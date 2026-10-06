@@ -91,7 +91,7 @@ func (s *Store) Acquire() (*Lease, error) {
 	if _, err := s.directoryInfo(true); err != nil {
 		return nil, &storageError{err}
 	}
-	if err := s.root.Mkdir(lockName, 0o700); err != nil {
+	if err := mkdirChildPrivate(s.root, lockName); err != nil {
 		if errors.Is(err, os.ErrExist) {
 			return nil, ErrLocked
 		}

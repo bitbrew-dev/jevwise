@@ -146,7 +146,7 @@ Release/update defaults (Windows binaries explicitly confirmed by the user): `je
 - [x] 19d1a - Runtime ownership: private Unix directory validation, exclusive inode-pinned lease and conservative cleanup. Mode-only foundation, no state/secrets yet; depends on 19c2.
 - [x] 19d1b - Private file operations: bounded exclusive writes and descriptor-validated reads, with fault fixtures. Depends on 19d1a.
 - [ ] 19d1c - Read-only storage: open existing private runtime directories without creating them for status/stop. Depends on 19d1b.
-- [ ] 19d2a1 - Private creation hooks: exclusive handle-relative Windows creation with explicit user owner/protected ACL, plus portable hooks. Depends on 19d1b.
+- [x] 19d2a1 - Private creation hooks: exclusive handle-relative Windows creation with explicit user owner/protected ACL, plus portable hooks. Depends on 19d1b.
 - [ ] 19d2a2 - Windows privacy: enable storage with exact opened-handle owner/DACL/reparse/link validation and native Windows fixtures. Depends on 19d2a1.
 - [ ] 19d2b - Darwin ACL privacy: reject extended ACLs through pinned descriptors; wire Unix validation and native macOS fixtures. Depends on 19d1b.
 - [ ] 19d3a - Strict instance reads: bounded state/control-key decoding, exact keys, safe canonical metadata and absent/partial distinction. Depends on platform privacy gates.
@@ -155,12 +155,14 @@ Release/update defaults (Windows binaries explicitly confirmed by the user): `je
 - [ ] 19d3c - Publication regressions: transient ACL changes, exchanged aliases and unexpected hardlinks. Depends on 19d3b, before child exposure.
 - [ ] 19e1 - Management endpoints: separate authenticated prepared/running/status/stop lifecycle, safe acknowledgements and graceful cancellation. Depends on state foundations.
 - [ ] 19e2 - Management controller: bounded no-proxy/no-redirect local requests with authenticated instance/state verification. Depends on 19e1.
+- [ ] 19e2b - Mutual control authentication: fresh nonce and domain-separated request/response HMAC proofs; never transmit the private management key or trust an echoed instance. Depends on 19e2, before CLI exposure.
 - [ ] 19e3 - Runtime routing: route only exact management endpoints separately from agent MCP authentication. Depends on 19e1.
 - [ ] 19f1a - Private bootstrap: bounded strict stdin framing, prepared-child lease and acknowledgement, independent child lifetime. Depends on validation foundations.
 - [ ] 19f1b - Detached launch: Unix/Windows same-executable detachment, anonymous stdin, bounded startup and cooperative pre-ACK cleanup; never kill post-ACK uncertainty. Depends on 19f1a.
 - [ ] 19f2a1 - Pure configuration validation: validate already-loaded values without environment/files/flags. Depends on existing configuration package.
 - [ ] 19f2a2 - Bootstrap validation: canonical local metadata, distinct credentials and fresh crypto-random management identity, no effects. Depends on 19f2a1/19e1.
 - [ ] 19f2b - Child assembly: hidden child command, owned storage/listener/service, publication then ACK, and no paid decision before running. Depends on publication regressions, routing and bootstrap.
+- [ ] 19f2b2 - Child failure regressions: additional initialization/EOF cleanup fixtures, before background CLI exposure. Depends on 19f2b.
 - [ ] 19g1 - Protected agent token: bounded token-file reader with owner/ACL/link/inode validation, fixed safe errors. Depends on platform privacy gates.
 - [ ] 19g2 - Token-file CLI: explicit file overrides environment, help/management skip token reads, lazy validation before factory. Depends on 19g1.
 - [ ] 19f2c1 - Management CLI: read-only status/stop without config, service construction, agent token reads, directory creation or ownership acquisition. Depends on 19d1c/19e2.

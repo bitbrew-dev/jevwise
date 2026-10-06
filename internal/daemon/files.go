@@ -74,7 +74,7 @@ func (s *Store) create(name string, data []byte, ops fileOps) (err error) {
 	if _, err := s.directoryInfo(true); err != nil {
 		return &storageError{err}
 	}
-	file, err := s.root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	file, err := privateCreate(s.root, name)
 	if err != nil {
 		return &storageError{err}
 	}

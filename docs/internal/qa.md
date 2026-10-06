@@ -216,3 +216,10 @@
 - 355 source/test lines plus plan/QA, under the hard cap. Independent source audit, repeated/race coverage and root full gates passed.
 - Allowlisted, bounded reads and exclusive writes validate pinned descriptors. Partial/short/write/sync/close failures preserve exchanged files and withhold unreadable secrets.
 - Darwin ACL and Windows explicit-owner/DACL slices still precede state exposure. No paid requests or persistent service started.
+
+## MCP explicit-owner creation 19d2a1
+
+- 299 source/test/dependency lines before documentation; hard cap respected. Independent ownership/ACL/lifetime audit and root full gates passed; six cross-builds and both Windows test compilations passed.
+- Windows exclusive creation is relative to a pinned root and gives the current user explicit ownership and a protected user-only DACL. Directories use directory-specific desired access. Unix files use exclusive read/write handles for later publication.
+- Native Windows CI is mandatory before merge; storage remains unsupported on Windows until 19d2a2. No user service, real decision or release was started.
+- Soft-cap exception: native Windows exposed a Unix-only rename assumption. The fixture now verifies both permitted rename and exact sharing-violation anchoring, without skipping or weakening privacy checks. All exact-head checks must rerun for the corrected fixture.

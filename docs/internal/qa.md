@@ -198,3 +198,9 @@
 - Baseline: `6b11eb8`; branch: `feature/19c1-mcp-runtime`; 324 changed lines, hard cap respected.
 - Soft-cap exception for owned-listener startup failures, safe live readiness, independent decision/lifetime contexts, active-call cancellation and bounded graceful shutdown. Independent/root repeated and full gates, race, vet/build/tidy, fixtures, formatting and six cross-builds passed.
 - Ready callbacks and decision services must cooperate with context cancellation; arbitrary blocking callbacks cannot be forcibly interrupted. The caller owns service cleanup. CLI exposure follows in 19c2; no paid calls or persistent daemon.
+
+## MCP foreground command 19c2
+
+- Baseline: `1acea95`; branch: `feature/19c2-mcp-cli`; 295 changed lines, below the soft cap.
+- Lazy token/address/config/service resolution, separate credentials, owned cleanup, endpoint-only output and fixed safe errors passed independent/root full and repeated tests, race, vet/build/tidy, fixtures, formatting and six cross-builds.
+- QA found readiness ignored short writes; full-length checking and cause/cleanup regression fixed it. README documents unreleased scope, setup, protocol/batch support, 32 MiB client event setting, cancellation and cooperative callback/writer limits. No paid API calls or persistent daemon.

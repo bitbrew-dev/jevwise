@@ -54,6 +54,24 @@ Precedence: **changed flags > nonblank environment > TOML > defaults**.
 - Otherwise: `$XDG_CONFIG_HOME/ts-jev/config.toml`, or `$HOME/.config/ts-jev/config.toml`. A missing discovered file is allowed.
 - Start with [config.example.toml](config.example.toml). Prefer environment credentials rather than command-line secrets.
 
+## Skill setup
+
+```sh
+bin/jev skill          # Default: .agent/skills/typesafe-ai/SKILL.md
+bin/jev skill --agent  # Explicit default target
+bin/jev skill --claude # .claude/skills/typesafe-ai/SKILL.md
+bin/jev skill --force  # Replace an existing regular skill file
+bin/jev skill --online # Print the upstream GitHub URL only
+```
+
+- Downloads the latest [upstream skill](https://github.com/typesafe-ai/skills/blob/main/skills/typesafe-ai/SKILL.md) unchanged, relative to the current project directory.
+- Local installation is the default; `--local` selects it explicitly. `--online` and `--local`, or `--agent` and `--claude`, cannot be combined. Online mode rejects installation flags and performs no download or write.
+- Hidden `--jev` selects the only supported skill. No decision credentials/configuration are read or sent. `--timeout` sets a `10s` default deadline for fetching and checks before file publication; filesystem calls are not forcibly interrupted.
+- Downloads require HTTP 200 and valid UTF-8 Markdown/front matter, are limited to 1 MiB, and never follow redirects. Invalid downloads leave existing skills untouched.
+- Existing files require `--force`. Static symlinks and nonregular destinations are refused; staging files are cleaned and complete bytes published without truncating the old inode.
+- Native Unix supports force replacement. Windows force replacement and JS/WASI/Plan 9 installation are unsupported; filesystems without hardlinks fail safely.
+- Filesystem operations assume ordinary native filesystems without hostile mounts/directory renames. Failure/cancellation after publication may mean the skill is already installed; no unsafe rollback is attempted.
+
 ## Go SDK quickstart
 
 The repository name is `jevwise`, but the declared Go module is still `github.com/benbenbang/ts-jev-go-sdk`. Its rename is a separate follow-up. The example below uses the current import path inside this checkout.
@@ -124,4 +142,4 @@ Tests use injected services/transports and local HTTP fixtures, not paid API req
 
 - Compatibility is pinned to Python SDK v0.7.2, revision `f078f1e208a0d885154dc758344ae4fce77ac168`.
 - [Compatibility notes](docs/internal/compatibility.md) describe Go-specific validation, ownership, decoding, and retry differences.
-- Separate follow-ups: `jev skill` with `.claude`/`.agent` targets, module rename, version display, release checking, and verified self-update. These commands are not implemented yet.
+- Remaining follow-ups: module rename, version display, release checking, and verified self-update. These features are not implemented yet.

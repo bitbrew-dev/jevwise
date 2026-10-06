@@ -43,6 +43,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	flags.String("model", "jev-latest", "Jev model")
 	flags.String("timeout", "10s", "Operation timeout, for example 10s")
 	cmd.AddCommand(newDecide(factory))
+	cmd.AddCommand(newSkill(newSkillFetch(nil), installSkill))
 	return cmd
 }
 

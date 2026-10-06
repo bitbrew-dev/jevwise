@@ -20,7 +20,7 @@ const skillRawURL = "https://raw.githubusercontent.com/typesafe-ai/skills/main/s
 const maxSkillBytes = 1 << 20
 
 type skillFetch func(context.Context) ([]byte, error)
-type skillInstall func(context.Context, []byte) error
+type skillInstall func(context.Context, []byte, string, bool) error
 
 var skillHeading = regexp.MustCompile(`(?m)^#{1,6}[ \t]+\S`)
 
@@ -82,10 +82,10 @@ func newSkillFetch(client *http.Client) skillFetch {
 	}
 }
 
-// newSkill defaults to local installation. Registration and filesystem target
-// handling are deliberately separate from this fetching/command foundation.
+// newSkill defaults to local installation under .agent; only the installer
+// handles filesystem paths. Online mode never fetches or installs a document.
 func newSkill(fetch skillFetch, install skillInstall) *cobra.Command {
-	var online, local bool
+	var online, local, agent, claude, force bool
 	jev := true
 	cmd := &cobra.Command{Use: "skill", Short: "Install Jev's skill or print its upstream URL",
 		Args: func(_ *cobra.Command, args []string) error {
@@ -104,7 +104,13 @@ func newSkill(fetch skillFetch, install skillInstall) *cobra.Command {
 			if flag := cmd.Flags().Lookup("provider"); flag != nil && flag.Changed && flag.Value.String() != "jev" {
 				return errors.New("skill supports only the Jev provider")
 			}
+			if cmd.Flags().Changed("agent") && !agent || cmd.Flags().Changed("claude") && !claude || agent && claude {
+				return errors.New("select at most one enabled skill target")
+			}
 			if online {
+				if cmd.Flags().Changed("agent") || cmd.Flags().Changed("claude") || cmd.Flags().Changed("force") {
+					return errors.New("online skill mode does not accept target or force flags")
+				}
 				if _, err := fmt.Fprintln(cmd.OutOrStdout(), skillURL); err != nil {
 					return &decisionError{"cannot write Jev skill URL", err}
 				}
@@ -136,13 +142,23 @@ func newSkill(fetch skillFetch, install skillInstall) *cobra.Command {
 			if err := validateSkill(data); err != nil {
 				return err
 			}
-			if err := install(ctx, data); err != nil {
+			target := ".agent"
+			if claude {
+				target = ".claude"
+			}
+			if err := install(ctx, data, target, force); err != nil {
+				if errors.Is(err, errSkillExists) {
+					return &decisionError{errSkillExists.Error(), err}
+				}
 				return &decisionError{"cannot install Jev skill", err}
 			}
 			return ctx.Err()
 		}}
 	cmd.Flags().BoolVar(&online, "online", false, "Print the upstream GitHub URL without downloading")
 	cmd.Flags().BoolVar(&local, "local", false, "Fetch and install the skill (default)")
+	cmd.Flags().BoolVar(&agent, "agent", false, "Install under .agent/skills (default)")
+	cmd.Flags().BoolVar(&claude, "claude", false, "Install under .claude/skills")
+	cmd.Flags().BoolVar(&force, "force", false, "Replace an existing regular skill file")
 	cmd.Flags().BoolVar(&jev, "jev", true, "Use the Jev skill")
 	_ = cmd.Flags().MarkHidden("jev")
 	return cmd

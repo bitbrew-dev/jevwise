@@ -1,4 +1,4 @@
-//go:build !linux && !darwin
+//go:build !linux && !darwin && !windows
 
 package daemon
 
@@ -7,7 +7,6 @@ import (
 	"os"
 )
 
-// Windows remains unsupported until explicit user-only ACL creation/validation lands.
 func storageSupported() error {
 	return errors.New("private MCP runtime storage is unsupported on this platform")
 }

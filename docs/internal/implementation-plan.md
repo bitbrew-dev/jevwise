@@ -21,7 +21,7 @@
 ## Architecture
 
 - Public SDK package `pkg/typesafe`: questions, answers, request/response metadata, client, errors, retry policy. The repository root stays free of SDK source files, as requested by the user.
-- SDK import: `github.com/benbenbang/ts-jev-go-sdk/pkg/typesafe`. All SDK source and adjacent tests, including future endpoints and retries, live in this package.
+- SDK import: `github.com/bitbrew-dev/jevwise/pkg/typesafe`. All SDK source and adjacent tests, including future endpoints and retries, live in this package.
 - `internal/config`: independent Viper loader, TOML + environment + flags.
 - `internal/cli`: Cobra command tree, injectable input/output and service factory, stderr-only logging.
 - `internal/service`: decision interface, Jev adapter, explicit external-session placeholders.
@@ -103,3 +103,17 @@
 - 14: add project-local targets and explicit force replacement, register `jev skill`, and document usage. Conflicting mode/target flags and online installation flags fail before network/filesystem effects.
 - Validate UTF-8 Markdown/front matter and reject empty, oversized, or HTML payloads. No API credentials, redirects, response bodies, or arbitrary transport errors are printed; online mode performs no download/write.
 - Install complete bytes atomically inside the current project using directory-scoped filesystem APIs; preserve existing files on errors and reject symlink/nonregular targets. Tests use injected transports and temporary directories, never paid API requests.
+
+## Confirmed release/update sequence: 2026-10-06
+
+User approved all four follow-ups sequentially. Preserve CLI `jev`, SDK `pkg/typesafe`, existing configuration names, and the manual semantic-release workflow. Work in `.agent/worktrees`; one PR at a time, each under 450 added/deleted lines including tests/docs. Use reviewed `virtual-main`, independent QA, `git ch --verbose` with OpenAI/gpt-5.6-luna, passing CI before squash merge, and cleanup after final checks.
+
+- [x] 15 - Module rename: declare `github.com/bitbrew-dev/jevwise`, update active imports/usage examples, document the SDK import-path migration, and validate a consumer build. No compatibility alias or configuration rename. Depends on merged 14.
+- [ ] 16 - Version reporting: add credential/config-independent `jev version` and `jev --version`, with release version, commit, and build date injected through Go linker flags; development builds are explicitly `dev`. Include deterministic output/error tests. Depends on 15.
+- [ ] 17a - Release assets: add tested native binary packaging and SHA-256 manifest for Linux/macOS/Windows amd64/arm64. Preserve semantic-release ownership of versions/tags; publish only against an existing verified release tag using a release-event/manual assets workflow. Do not trigger an actual release during implementation. Depends on 16.
+- [ ] 17b - Release checks: implement bounded, context-aware, credential-free GitHub stable-release lookup and `jev update --check`. Reject malformed/draft/prerelease metadata, use strict stable semantic versions, handle absent releases/rate limits safely, never downgrade, and test only injected fixtures. Depends on 17a.
+- [ ] 18a - Verified download: select the exact platform binary and checksum manifest from the selected release, restrict source/redirect hosts, bound reads, and require exact SHA-256 verification before any executable write. Checksums protect integrity, not a compromised publisher; trust remains GitHub/repository ownership. Depends on 17b.
+- [ ] 18b - Safe replacement: root filesystem operations at the executable directory, reject static symlinks/nonregular/multiply-linked destinations, stage a complete executable with sync/close, and atomically replace the directory entry only after verification and cancellation checks. Preserve the original on prepublication failure; document ordinary-filesystem and postpublication limitations. Linux/macOS automatic replacement only; Windows/manual and package-managed installs are not silently elevated. Depends on 18a.
+- [ ] 18c - Update integration: wire `jev update` to lookup/download/verify/replace, keep `--check` read-only, refuse unknown/development versions for automatic installation, document package-manager/manual use, and test injected end-to-end failures. Depends on 18b. Split further only if needed to preserve the hard cap, never by compressing readable code.
+
+Release/update defaults (Windows binaries explicitly confirmed by the user): `jev update --check` checks; `jev update` installs; release binaries cover Linux/macOS/Windows amd64/arm64; native Linux/macOS auto-replacement, Windows manual updates. No automatic background checks, credentials, arbitrary repositories, downgrade, shell installer execution, or workflow/release dispatch during QA. Verify both Windows architectures by cross-compilation and add native Windows CLI smoke CI in 17a; Windows manual updates are distinct from binary support.

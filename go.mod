@@ -1,4 +1,4 @@
-module github.com/benbenbang/ts-jev-go-sdk
+module github.com/bitbrew-dev/jevwise
 
 go 1.27.1
 

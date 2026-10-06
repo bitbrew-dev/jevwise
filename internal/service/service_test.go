@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	typesafe "github.com/benbenbang/ts-jev-go-sdk/pkg/typesafe"
+	typesafe "github.com/bitbrew-dev/jevwise/pkg/typesafe"
 )
 
 func TestJevMappingAndIndependentServerMetadata(t *testing.T) {

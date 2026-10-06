@@ -6,9 +6,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/benbenbang/ts-jev-go-sdk/internal/config"
-	"github.com/benbenbang/ts-jev-go-sdk/internal/service"
-	"github.com/benbenbang/ts-jev-go-sdk/pkg/typesafe"
+	"github.com/bitbrew-dev/jevwise/internal/config"
+	"github.com/bitbrew-dev/jevwise/internal/service"
+	"github.com/bitbrew-dev/jevwise/pkg/typesafe"
 	"github.com/spf13/cobra"
 )
 

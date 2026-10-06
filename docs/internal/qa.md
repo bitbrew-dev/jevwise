@@ -114,3 +114,9 @@
 - Independent QA and root full tests/race, tidy-diff, vet/build, formatting, and credential-free help/online smoke checks passed.
 - Default `.agent`, explicit `.agent`/`.claude`, `--force` hint, static symlink rejection, inode-preserving force, staging cleanup, and cwd production bridge covered.
 - Native Unix force only; Windows force and nonnative install limitations documented. Prepublication failures preserve prior file; postpublication cancellation/cleanup errors do not trigger unsafe rollback.
+
+## Module migration 15
+
+- Baseline: `eee94f0`; feature branch: `feature/15-module-rename`.
+- Scope: module/current imports and consumer examples only; CLI/configuration names unchanged.
+- Independent/root tests, race, vet, build, tidy-diff, and formatting passed; 74 changed lines. Separate consumer and all six cross-builds (including both Windows architectures) passed. Dependencies unchanged; private specification stays unstaged.

@@ -23,7 +23,7 @@ func ValidateAddress(address string) (string, error) {
 	if err != nil || !parsed.Addr().IsLoopback() || parsed.Addr().Zone() != "" || parsed.Port() == 0 {
 		return "", errors.New("MCP address must be a loopback IP with a nonzero port")
 	}
-	return parsed.String(), nil
+	return netip.AddrPortFrom(parsed.Addr().Unmap(), parsed.Port()).String(), nil
 }
 
 // NewHTTP protects /mcp only. The caller owns binding, server timeouts and shutdown.

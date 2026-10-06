@@ -186,3 +186,9 @@
 - Baseline: `cb57af6`; branch: `feature/19b2-mcp-protocol`; 348 changed lines, hard cap respected.
 - Legacy batches are rejected before dispatch; at most four decisions run with immediate overload refusal. Sanitized HTTP JSON-RPC errors preserve code/ID and only verified public protocol revisions; live supported-version and future-fallback fixtures passed source review and implementation gates.
 - Client cancellation, escaped-output and writer/frame boundary regressions remain mandatory in 19b2b before CLI exposure. No paid API calls, persistent daemon or release/workflow changes.
+
+## MCP HTTP boundaries 19b2b
+
+- Baseline: `fa2d472`; branch: `feature/19b2b-mcp-boundaries`; 237 changed lines, below the soft cap.
+- Modern socket disconnect and legacy lifetime cancellation, complete escaped output above 16 MiB, 32 MiB frame limits and terminal writer errors passed source review and implementation gates. Mapped loopback addresses now match actual listener Host values.
+- Maximum 8 MiB decision JSON may yield SSE frames above the SDK client's default 16 MiB; clients need a 32 MiB event limit for maximum-size results. No real decisions, persistent daemon or release/workflow changes.

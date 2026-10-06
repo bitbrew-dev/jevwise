@@ -109,22 +109,39 @@ func TestWindowsExplicitPrivateCreation(t *testing.T) {
 func TestWindowsCreationUsesPinnedRootAfterRename(t *testing.T) {
 	root, path := creationRoot(t)
 	renamed := path + "-renamed"
-	if err := os.Rename(path, renamed); err != nil {
-		t.Fatal(err)
+	renameErr := os.Rename(path, renamed)
+	if renameErr != nil && !errors.Is(renameErr, windows.ERROR_SHARING_VIOLATION) {
+		t.Fatal(renameErr)
 	}
-	if err := os.Mkdir(path, 0o700); err != nil {
-		t.Fatal(err)
+	target, untouched := renamed, path
+	if renameErr == nil {
+		if err := os.Mkdir(path, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	} else {
+		// Go's pinned Windows Root may prohibit rename. That is also a valid
+		// confinement guarantee: creation must still use the unchanged root.
+		target, untouched = path, renamed
+		if _, err := os.Stat(renamed); !errors.Is(err, os.ErrNotExist) {
+			t.Fatal("blocked rename changed destination", err)
+		}
 	}
 	file, err := privateCreate(root, "state.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	_ = file.Close()
-	if _, err := os.Stat(filepath.Join(renamed, "state.json")); err != nil {
+	assertPrivateCreation(t, file)
+	if _, err := file.WriteString("pinned state"); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if data, err := os.ReadFile(filepath.Join(target, "state.json")); err != nil || string(data) != "pinned state" {
 		t.Fatal("pinned root not used", err)
 	}
-	if _, err := os.Stat(filepath.Join(path, "state.json")); !errors.Is(err, os.ErrNotExist) {
-		t.Fatal("replacement root mutated", err)
+	if _, err := os.Stat(filepath.Join(untouched, "state.json")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("unpinned path mutated", err)
 	}
 }
 

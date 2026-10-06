@@ -160,7 +160,7 @@ Release/update defaults (Windows binaries explicitly confirmed by the user): `je
 - [x] 19f1a - Private bootstrap: bounded strict stdin framing, prepared-child lease and acknowledgement, independent child lifetime. Depends on existing configuration values and 19e2; callers must supply a pure validator.
 - [x] 19f1b - Detached launch: Unix/Windows same-executable detachment, anonymous stdin, bounded startup and cooperative pre-ACK cleanup; never kill post-ACK uncertainty. Depends on 19f1a.
 - [x] 19f2a1 - Pure configuration validation: validate already-loaded values without environment/files/flags. Depends on existing configuration package.
-- [ ] 19f2a2 - Bootstrap validation: canonical local metadata, distinct credentials and fresh crypto-random management identity, no effects. Depends on 19f2a1/19e1.
+- [x] 19f2a2 - Bootstrap validation: canonical local metadata, distinct credentials and fresh crypto-random management identity, no effects. Depends on 19f2a1/19e1.
 - [ ] 19f2b - Child assembly: hidden child command, owned storage/listener/service, publication then ACK, and no paid decision before running. Depends on publication regressions, routing and bootstrap.
 - [ ] 19f2b2 - Child failure regressions: additional initialization/EOF cleanup fixtures, before background CLI exposure. Depends on 19f2b.
 - [ ] 19g1 - Protected agent token: bounded token-file reader with owner/ACL/link/inode validation, fixed safe errors. Depends on platform privacy gates.

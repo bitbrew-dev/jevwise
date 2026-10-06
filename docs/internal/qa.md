@@ -57,3 +57,11 @@
 
 - State and question validation before extra-body merge is an intentional stricter Go rule. Explicit model pointers preserve blank values; timeout zero inherits.
 - Standalone raw decoding performs no retries. `SystemOneInto` custom decoding shares the HTTP attempt helper for later retry predicates; it follows standard Go JSON partial-mutation semantics.
+
+## Retry policy 07a
+
+- Parent: `4701d21`, endpoint PR 13 merged with passing CI.
+- Branch: `feature/07a-retry-policy`; 277 changed lines including this ledger and plan updates.
+- Independent QA and pinned Python audit passed; hexadecimal numeric retry headers are rejected to match Python.
+- Fresh full tests/race, vet, build, tidy-diff, and whitespace checks passed after rebase.
+- Go adaptations: nanosecond jitter, finite duration range, standard HTTP-date formats, zero policy disables retries, and zero budget is unbounded.

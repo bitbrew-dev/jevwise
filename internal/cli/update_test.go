@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func updateRoot(latest func(context.Context) (update.Release, error), current string) *cobra.Command {
+func updateRoot(latest func(context.Context) (update.Release, error), current string, installs ...updateOps) *cobra.Command {
 	root := NewRootWithFactory(func(config.Config) (service.DecisionService, func(), error) {
 		panic("release checks must not create decision services")
 	})
@@ -24,7 +24,11 @@ func updateRoot(latest func(context.Context) (update.Release, error), current st
 			root.RemoveCommand(cmd)
 		}
 	}
-	root.AddCommand(newUpdate(latest, current))
+	ops := updateOps{latest: latest}
+	if len(installs) != 0 {
+		ops = installs[0]
+	}
+	root.AddCommand(newUpdate(ops, current))
 	return root
 }
 
@@ -98,7 +102,7 @@ func TestUpdateInvalidInputsAndHelpAvoidLookup(t *testing.T) {
 	if _, _, err := execute(updateRoot(nil, "dev"), "update", "--check"); err == nil {
 		t.Fatal("nil lookup accepted")
 	}
-	if out, _, err := execute(NewRoot(), "update"); err == nil || out != "" || !strings.Contains(err.Error(), "self-update is not available") {
+	if out, _, err := execute(NewRoot(), "update"); err == nil || out != "" || !strings.Contains(err.Error(), "stable versioned build") {
 		t.Fatal("default update fetched or did not explain limitation", err)
 	}
 }

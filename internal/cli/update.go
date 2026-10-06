@@ -11,11 +11,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newUpdate only checks stable release metadata. Installation remains unavailable
-// until the separately reviewed download/verification/replacement implementation.
-func newUpdate(latest func(context.Context) (update.Release, error), current string) *cobra.Command {
+type updateOps struct {
+	latest       func(context.Context) (update.Release, error)
+	download     func(context.Context, update.Release, string, string) (*update.Binary, error)
+	replace      func(context.Context, *update.Binary, string) (update.InstallResult, error)
+	goos, goarch string
+}
+
+func updateFailure(installed bool, message string, cause error) error {
+	if installed {
+		message = "Jev update installed; restart required; " + message
+	}
+	return &decisionError{message, cause}
+}
+
+func newUpdate(ops updateOps, current string) *cobra.Command {
 	var check bool
-	cmd := &cobra.Command{Use: "update", Short: "Check the latest stable Jev release",
+	cmd := &cobra.Command{Use: "update", Short: "Install or check the latest stable Jev release",
 		Args: func(_ *cobra.Command, args []string) error {
 			if len(args) != 0 {
 				return errors.New("update does not accept positional arguments")
@@ -27,9 +39,17 @@ func newUpdate(latest func(context.Context) (update.Release, error), current str
 				return err
 			}
 			if !check {
-				return errors.New("self-update is not available yet; use --check to inspect releases")
+				if _, err := update.Compare(current, current); err != nil {
+					return errors.New("self-update requires a stable versioned build; install manually or use --check")
+				}
+				if (ops.goos != "linux" && ops.goos != "darwin") || (ops.goarch != "amd64" && ops.goarch != "arm64") {
+					return errors.New("self-update is unsupported on this platform; update manually or use --check")
+				}
+				if ops.download == nil || ops.replace == nil {
+					return errors.New("self-update installation is unavailable")
+				}
 			}
-			if latest == nil {
+			if ops.latest == nil {
 				return errors.New("release lookup is unavailable")
 			}
 			timeout := "10s"
@@ -45,11 +65,12 @@ func newUpdate(latest func(context.Context) (update.Release, error), current str
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			release, err := latest(ctx)
+			release, err := ops.latest(ctx)
 			if ctxErr := ctx.Err(); ctxErr != nil {
 				return ctxErr
 			}
 			var output string
+			installed := false
 			if errors.Is(err, update.ErrNoRelease) {
 				output = "No stable Jev release is published yet.\n"
 			} else if err != nil {
@@ -64,6 +85,28 @@ func newUpdate(latest func(context.Context) (update.Release, error), current str
 					output = fmt.Sprintf("Latest release: %s; current version unknown (development or unversioned build).\n", release.Tag)
 				case comparison < 0:
 					output = fmt.Sprintf("Update available: %s -> %s\n", current, release.Tag)
+					if !check {
+						binary, err := ops.download(ctx, release, ops.goos, ops.goarch)
+						if ctxErr := ctx.Err(); ctxErr != nil {
+							return ctxErr
+						}
+						if err != nil {
+							return updateFailure(false, "cannot download Jev update", err)
+						}
+						if binary == nil {
+							return errors.New("download returned no Jev executable")
+						}
+						result, err := ops.replace(ctx, binary, current)
+						installed = result.Installed
+						err = errors.Join(err, ctx.Err())
+						if err != nil {
+							return updateFailure(installed, "cannot finish Jev update", err)
+						}
+						if !installed {
+							return errors.New("Jev update was not installed")
+						}
+						output = fmt.Sprintf("Installed Jev %s -> %s; restart required\n", current, release.Tag)
+					}
 				case comparison == 0:
 					output = fmt.Sprintf("Already current: %s\n", current)
 				default:
@@ -71,14 +114,15 @@ func newUpdate(latest func(context.Context) (update.Release, error), current str
 				}
 			}
 			if err := ctx.Err(); err != nil {
-				return err
+				return updateFailure(installed, "cannot write release information", err)
 			}
 			n, err := io.WriteString(cmd.OutOrStdout(), output)
 			if err == nil && n != len(output) {
 				err = io.ErrShortWrite
 			}
+			err = errors.Join(err, ctx.Err())
 			if err != nil {
-				return &decisionError{"cannot write release information", err}
+				return updateFailure(installed, "cannot write release information", err)
 			}
 			return nil
 		}}

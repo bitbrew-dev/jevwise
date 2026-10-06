@@ -162,3 +162,9 @@
 - Baseline: `6d1a04c`; branch: `feature/18b2-atomic-replace`; 444 changed lines, hard cap respected.
 - Soft-cap exception for rooted locking/owner/link/inode checks, staged publication and injected failure/cancellation/cleanup coverage. Independent/root tests, repeated fixtures, race, vet/build/tidy and formatting passed; six cross-builds and Windows test compilation passed.
 - Original bytes/inode survive prepublication failures; successful rename retains Installed state on later errors. Returned-path symlink ambiguity, mode-only preservation and cooperative-filesystem limits documented. No user executable touched; optional unchanged-metadata inode-exchange regression follows in 18c.
+
+## Update integration 18c
+
+- Baseline: `9abf4a9`; branch: `feature/18c-update-integration`; 439 changed lines, hard cap respected.
+- Soft-cap exception for injected CLI stage/deadline/publication-state coverage, fake HTTP-to-temporary-executable integration, and unchanged-metadata inode exchange. Independent/root full/repeated tests, race, vet/build/tidy, fixtures and formatting passed; native offline smoke and six cross-builds passed.
+- Read-only checks remain config/credential independent; automatic installs reject unknown versions/unsupported platforms before effects, never rewrite equal/newer versions, and report successful publication even on later cancellation/cleanup/output errors. No user executable changed, inspected binary executed, real release downloaded or release published.

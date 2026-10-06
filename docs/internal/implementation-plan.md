@@ -47,8 +47,8 @@
 
 ## Epics
 
-- [ ] Translate Python SDK to Golang: Complete tickets 02-07 and the SDK portions of ticket 12.
-- [ ] Support CLI mode: Complete tickets 08-12, using Jev with deferred external-session providers.
+- [x] Translate Python SDK to Golang: Complete tickets 02-07 and the SDK portions of ticket 12.
+- [x] Support CLI mode: Complete tickets 08-12, using Jev with deferred external-session providers.
 
 ## Tickets
 
@@ -63,8 +63,8 @@
 - [x] 08 - TOML configuration: Replace the config stub with isolated Viper loading and validated runtime settings. Test XDG/HOME discovery, missing optional versus explicit files, malformed TOML, defaults, environment, and flag precedence. Depends on 01; branch `feature/08-config`; target <300 lines.
 - [x] 09 - Cobra executable: Add Cobra dependency, fresh testable root command, persistent config/provider/API/model/timeout flags, help, injected streams, cancellation, and stderr logging. Test help/no-network, bad flags/config, and isolated command instances. Depends on 08; branch `feature/09-cli-root`; target <300 lines.
 - [x] 10 - Provider interface and placeholders: Define a context-aware decision service and Jev adapter. Reserve `codex`/`claude` providers with clear not-implemented errors and no subprocess calls. Test adapter mapping and placeholder/unknown-provider failures. Depends on 06; branch `feature/10-service`; target <300 lines.
-- [ ] 11 - Decision CLI: Add `jev decide --prompt ... --option ...` and explicit stdin prompt support. Require distinct nonblank options, emit JSON probabilities from Jev, honor config overrides, and propagate errors. Test through injected service and local HTTP server, including invalid input and unavailable providers. Depends on 07,09,10; branch `feature/11-decide`; target 300-400 lines.
-- [ ] 12 - Usage and final QA: Add public SDK/CLI quickstarts and example TOML, compatibility notes, local stack/QA ledger, and update ticket progress. Run race tests, vet, build, command smoke tests, and verify branch caps. Depends on all tickets; branch `feature/12-docs`; target <300 lines.
+- [x] 11 - Decision CLI: Add `jev decide --prompt ... --option ...` and explicit stdin prompt support. Require distinct nonblank options, emit JSON probabilities from Jev, honor config overrides, and propagate errors. Test through injected service and local HTTP server, including invalid input and unavailable providers. Depends on 07,09,10; branch `feature/11-decide`; target 300-400 lines.
+- [x] 12 - Usage and final QA: Add public SDK/CLI quickstarts and example TOML, compatibility notes, local stack/QA ledger, and update ticket progress. Run race tests, vet, build, command smoke tests, and verify branch caps. Depends on all tickets; branch `feature/12-docs`; target <300 lines.
 
 ## Acceptance gates
 
@@ -89,4 +89,10 @@
 - Go adaptation: validate original state as well as original questions before extra-body replacement; invalid original state cannot be rescued by an override.
 - HTTP and optional typed decoding share one attempt helper, allowing ticket 07 predicates to retry decoding errors without changing the public endpoint API. Model-list calls reject unsupported model/extra-body overrides.
 - Ticket 07 is split into 07a policy, 07b pure retry engine, and 07c client integration, each with deterministic tests and its own feature branch. This keeps implementation and tests within the 450-line cap.
-- Follow with ticket 11 decision CLI and ticket 12 usage/final QA. Skill installation, repository/module rename, version display, release checking, and verified self-update remain separate follow-up features.
+- Follow with ticket 11 decision CLI and ticket 12 usage/final QA. Skill installation, Go module/import rename, version display, release checking, and verified self-update remain separate follow-up features. The GitHub repository is already named `jevwise`.
+
+## Initial scope completion
+
+- Tickets 01-12 are implemented and validated; follow-up tickets 13-14 remain deferred. Final documentation/QA is published as the last sequential PR before its completion markers enter `main`.
+- All SDK and CLI source remains in `pkg/typesafe`, `internal`, and `cmd`; no paid API calls were used for QA.
+- Remaining user-requested work: Go module/import rename, version output, new-release checks, and verified self-update. Plan these as separate small features, including release assets/checksums and update safety, rather than changing workflows without review.

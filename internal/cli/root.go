@@ -20,6 +20,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	if factory == nil {
 		factory = defaultServiceFactory
 	}
+	var showVersion bool
 	cmd := &cobra.Command{
 		Use: "jev", Short: "Make decisions with Jev",
 		SilenceUsage: true, SilenceErrors: true,
@@ -29,12 +30,19 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 			}
 			return nil
 		},
-		RunE: func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if showVersion {
+				return writeVersion(cmd)
+			}
+			return cmd.Help()
+		},
 	}
 	// Flag parser errors can include argument values. Do not expose credentials.
 	cmd.SetFlagErrorFunc(func(_ *cobra.Command, _ error) error {
 		return errors.New("invalid command flags: see --help")
 	})
+	// Leave Command.Version empty: Cobra prints raw version-template writer errors.
+	cmd.Flags().BoolVar(&showVersion, "version", false, "Print version and build metadata")
 	flags := cmd.PersistentFlags()
 	flags.String("config", "", "Path to TOML configuration")
 	flags.String("provider", "jev", "Decision provider: jev, codex or claude")
@@ -42,6 +50,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	flags.String("base-url", "https://api.typesafe.ai", "Jev API base URL")
 	flags.String("model", "jev-latest", "Jev model")
 	flags.String("timeout", "10s", "Operation timeout, for example 10s")
+	cmd.AddCommand(newVersion())
 	cmd.AddCommand(newDecide(factory))
 	cmd.AddCommand(newSkill(newSkillFetch(nil), installSkill))
 	return cmd

@@ -1,12 +1,12 @@
 .EXPORT_ALL_VARIABLES:
 NAME = jev
 DirName ?= build
-PKG = jev
+PKG = github.com/bitbrew-dev/jevwise/internal/buildinfo
 ProjectUrl = "https://github.com/bitbrew-dev/jevwise"
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
-BuildTime = $(shell date -u '+%Y-%m-%d_%H:%M:%S')
-BuildCommit = $(shell git rev-parse --short HEAD)
+BuildTime ?= $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
+BuildCommit ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 DEFAULT_CORES = 1
 TREE_LEVEL ?= 5
 NIGHTLY ?= 0
@@ -15,14 +15,19 @@ NIGHTLY ?= 0
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 
-# ifdef NIGHTLY
-ifeq ($(NIGHTLY),1)
-    VERSION = $(shell git rev-parse --short HEAD)
-    VERSION_TYPE = "nightly"
-else
-    VERSION = $(shell git describe --abbrev=0 --tags 2>/dev/null || echo $(shell git rev-parse --short HEAD))
-    VERSION_TYPE = "latest release"
+# Only an exact tag on a clean checkout identifies an automatic release build.
+# Explicit VERSION values supplied by callers always take precedence.
+ifeq ($(origin VERSION), undefined)
+    VERSION := $(shell if [ -z "$$(git status --porcelain 2>/dev/null)" ]; then git describe --exact-match --tags HEAD 2>/dev/null || printf dev; else printf dev; fi)
 endif
+VERSION_TYPE = $(if $(filter dev,$(VERSION)),development,versioned)
+
+ifeq ($(GOOS),windows)
+    EXE_SUFFIX = .exe
+else
+    EXE_SUFFIX =
+endif
+OUTPUT = $(DirName)/$(NAME)-$(GOOS)-$(GOARCH)$(EXE_SUFFIX)
 
 # count cpu
 ifeq ($(UNAME_S),Darwin)
@@ -65,15 +70,16 @@ verify:
 ## Build for specified OS and ARCH
 build-platform: verify
 	@echo "Building $(VERSION_TYPE) version: $(VERSION)"
-	@mkdir -p build
+	@mkdir -p "$(DirName)"
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) go build -p $(CORES) -v \
-	        -o ./${DirName}/$(NAME)-$(GOOS)-$(GOARCH) \
-		    -ldflags="-s -w \
-		    -X ${PKG}/pkg/config.Version=${VERSION}  \
-			-X ${PKG}/pkg/config.BuildTime=${BuildTime}  \
-			-X ${PKG}/pkg/config.ProjectUrl=${ProjectUrl} " \
-		    ./cmd && \
-	chmod +x ./${DirName}/$(NAME)-$(GOOS)-$(GOARCH)
+	        -o "$(OUTPUT)" \
+	        -ldflags="-s -w \
+	        -X $(PKG).Version=$(VERSION) \
+	        -X $(PKG).Commit=$(BuildCommit) \
+	        -X $(PKG).Date=$(BuildTime)" ./cmd
+ifneq ($(GOOS),windows)
+	@chmod +x "$(OUTPUT)"
+endif
 	@echo "Built $(NAME) for $(GOOS) $(GOARCH)"
 
 .PHONY: build

@@ -80,20 +80,33 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 	c := Config{APIKey: values["api_key"], BaseURL: values["base_url"], Model: values["model"], Provider: values["provider"]}
 	var err error
 	c.Timeout, err = time.ParseDuration(values["timeout"])
-	if err != nil || c.Timeout <= 0 {
+	if err != nil {
 		return Config{}, errors.New("timeout must be a positive duration")
+	}
+	if err := c.Validate(); err != nil {
+		return Config{}, err
+	}
+	return c, nil
+}
+
+// Validate checks an already resolved configuration without reading files,
+// flags or environment, and without changing its values. Credentials remain
+// optional until service initialization. Failures never include input values.
+func (c Config) Validate() error {
+	if c.Timeout <= 0 {
+		return errors.New("timeout must be a positive duration")
 	}
 	u, err := url.Parse(c.BaseURL)
 	if err != nil || u.Hostname() == "" || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
-		return Config{}, errors.New("base_url must be an absolute HTTP(S) URL without credentials, query or fragment")
+		return errors.New("base_url must be an absolute HTTP(S) URL without credentials, query or fragment")
 	}
-	if c.Model == "" {
-		return Config{}, errors.New("model must not be blank")
+	if strings.TrimSpace(c.Model) == "" {
+		return errors.New("model must not be blank")
 	}
 	switch c.Provider {
 	case "jev", "codex", "claude":
 	default:
-		return Config{}, errors.New("provider must be jev, codex or claude")
+		return errors.New("provider must be jev, codex or claude")
 	}
-	return c, nil
+	return nil
 }

@@ -77,9 +77,9 @@
 
 ## Follow-up scope added by the user
 
-- [ ] 13 - `jev skill`: Add a standalone follow-up branch for the upstream TypeSafe AI skill, default Jev provider and hidden `--jev`, plus exclusive `--online` / `--local` modes. Online mode gives the LLM a GitHub source to fetch; local mode downloads the latest `SKILL.md`. Confirm default mode and output/install destination before implementation. Test help visibility, mode validation, content delivery, and failed downloads through an injected HTTP client. Depends on 09; target <300 lines, hard 450. This follow-up is not part of the initial SDK/decision CLI acceptance gates.
+- [ ] 13 - `jev skill`: Add a standalone follow-up branch for the upstream TypeSafe AI skill, default Jev provider and hidden `--jev`, plus exclusive `--online` / `--local` modes. Online mode gives the LLM a GitHub source to fetch; local mode downloads the latest `SKILL.md`. Confirmed default: local download to `.agent/skills/typesafe-ai/SKILL.md`; `--online` prints the upstream GitHub URL without fetching. Test help visibility, mode validation, content delivery, and failed downloads through an injected HTTP client. Depends on 09; target <300 lines, hard 450. This follow-up is not part of the initial SDK/decision CLI acceptance gates.
 - Source: https://github.com/typesafe-ai/skills/blob/main/skills/typesafe-ai/SKILL.md
-- [ ] 14 - Skill installation targets: Extend `jev skill` with mutually exclusive `--claude` / `--agent` destination flags, installing under project-local `.claude` / `.agent` respectively. Confirm nested `SKILL.md` layout, default destination, and overwrite policy before implementation. Test both paths, conflicting flags, directory creation, existing files, and write failures. Depends on 13; separate feature branch, target <300 lines and hard 450. Preserve `.agent` exactly as requested.
+- [ ] 14 - Skill installation targets: Extend `jev skill` with mutually exclusive `--claude` / `--agent` destination flags, installing under project-local `.claude` / `.agent` respectively. Confirmed layout: `.agent/skills/typesafe-ai/SKILL.md` by default or with `--agent`; `--claude` selects `.claude/skills/typesafe-ai/SKILL.md`. Existing files require `--force`; symlinks and nonregular destinations are rejected. Test both paths, conflicting flags, directory creation, existing files, and write failures. Depends on 13; separate feature branch, target <300 lines and hard 450. Preserve `.agent` exactly as requested.
 
 ## Resumed implementation: 2026-10-06
 
@@ -96,3 +96,10 @@
 - Tickets 01-12 are implemented and validated; follow-up tickets 13-14 remain deferred. Final documentation/QA is published as the last sequential PR before its completion markers enter `main`.
 - All SDK and CLI source remains in `pkg/typesafe`, `internal`, and `cmd`; no paid API calls were used for QA.
 - Remaining user-requested work: Go module/import rename, version output, new-release checks, and verified self-update. Plan these as separate small features, including release assets/checksums and update safety, rather than changing workflows without review.
+
+## Confirmed skill implementation split
+
+- 13: implement a bounded, context-aware upstream Markdown downloader and tested command foundation with hidden `--jev`, exclusive modes, safe errors, and injected fetch/install callbacks. Register the command only in 14 so no intermediate CLI default contradicts the confirmed install destination.
+- 14: add project-local targets and explicit force replacement, register `jev skill`, and document usage. Conflicting mode/target flags and online installation flags fail before network/filesystem effects.
+- Validate UTF-8 Markdown/front matter and reject empty, oversized, or HTML payloads. No API credentials, redirects, response bodies, or arbitrary transport errors are printed; online mode performs no download/write.
+- Install complete bytes atomically inside the current project using directory-scoped filesystem APIs; preserve existing files on errors and reject symlink/nonregular targets. Tests use injected transports and temporary directories, never paid API requests.

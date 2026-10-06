@@ -52,17 +52,21 @@ make build-platform GOOS=windows GOARCH=arm64
 - Release linker symbols are `github.com/bitbrew-dev/jevwise/internal/buildinfo.Version`, `.Commit`, and `.Date`.
 - Make produces `build/jev-windows-amd64.exe` or `build/jev-windows-arm64.exe`. Make helpers require Unix shell tools; native Windows PowerShell can use `go build -o jev.exe ./cmd`, then `.\jev.exe --version`.
 
-## Release checks
+## Release checks and updates
 
 ```sh
 bin/jev update --check
 bin/jev update --check --timeout 20s
+bin/jev update --timeout 60s # Install on supported standalone Linux/macOS builds
 ```
 
-- Explicitly checks the latest stable GitHub release, without downloading a binary or changing files. No background checks, API credentials, or decision configuration are used.
-- `--timeout` is a positive flag-only deadline, default `10s`; decision timeout environment/config values do not affect updates.
+- `--check` checks the latest stable GitHub release without downloading a binary or changing files. No background checks, API credentials, or decision configuration are used.
+- `--timeout` is a positive flag-only deadline for the whole update, default `10s`; decision timeout environment/config values do not affect updates. Increase it for slow downloads.
 - Reports newer/current releases or no published release. Development/unknown builds report the latest release without inventing a version comparison.
-- Accepts canonical stable `vX.Y.Z` tags only; prereleases/drafts and malformed or oversized responses are refused. Automatic self-update is a separate follow-up; currently use `--check`.
+- Accepts canonical stable `vX.Y.Z` tags only; prereleases/drafts and malformed or oversized responses are refused.
+- Without `--check`, downloads and verifies a strictly newer release before replacement. Equal/newer installed versions are not rewritten or downgraded. Development, unknown and unstamped builds require manual installation.
+- Automatic installation supports Linux/macOS amd64/arm64 only. Windows still supports version reporting and release checks, but updates are manual. Use your package manager for managed installations.
+- After success, start a new invocation to use the new binary. An error saying the update was installed means publication succeeded but cancellation, cleanup or reporting failed: inspect `jev version` and any lock before retrying; no rollback occurs.
 
 ## Release binaries
 
@@ -77,16 +81,15 @@ The release-assets workflow attaches raw CLI binaries and `SHA256SUMS` to an exi
 - Download the exact OS/architecture asset. Unix users must make a downloaded binary executable; Windows users run the `.exe` directly.
 - `SHA256SUMS` hashes the exact raw binary bytes. Verify the hash before use. Checksums detect corruption, not a compromised publisher; trust remains the repository and GitHub/TLS.
 - The internal update downloader verifies exact platform asset names, metadata sizes and SHA-256 before returning bytes. Binary/manifest limits are 64 MiB/64 KiB; downloads use fixed release URLs and bounded HTTPS redirects to allowlisted GitHub hosts, without credentials or cookies.
-- This download foundation is not yet wired to automatic installation. `jev update --check` still performs metadata checks only; executable replacement comes in a separate reviewed feature.
-- Release/Make builds embed a passive update stamp that survives stripping and path trimming. Version guards inspect Go module/platform metadata, recheck the candidate checksum, and reject equal/older or mismatched on-disk versions without executing binaries. Stamps are self-declared metadata, not signatures; automatic replacement is not yet enabled.
+- Release/Make builds embed a passive update stamp that survives stripping and path trimming. Version guards inspect Go module/platform metadata, recheck the candidate checksum, and reject equal/older or mismatched on-disk versions without executing binaries. Stamps are self-declared metadata, not signatures.
 - Your manual semantic-release workflow still owns release creation. Asset publication runs after a published release, with a manual tag-based fallback. No release is created during development QA.
 - Publication rejects existing target assets and uploads the checksum manifest last. If publication fails midway, inspect and remove incomplete assets manually before retrying; no automatic overwrite/delete/resume occurs.
 - Native CI tests Linux, macOS, and Windows CLI execution. Windows arm64 is cross-built, not claimed as natively executed.
 - On Windows, default config discovery uses `%USERPROFILE%\.config\ts-jev\config.toml` when `XDG_CONFIG_HOME` is unset.
 
-## Replacement safety (foundation)
+## Replacement safety
 
-- Automatic replacement is limited to standalone Linux/macOS binaries. Windows updates remain manual; CLI installation is not enabled yet.
+- Automatic replacement is limited to standalone Linux/macOS binaries. Windows updates remain manual; the updater never uses sudo or elevates privileges.
 - A per-executable `.<binary-name>.jev-update-lock` directory serializes cooperating updates. Crashed/stale locks require manual inspection and removal, never automatic deletion.
 - Guards reject unsafe returned-path targets and changed versions. Only permission bits are preserved, not group ownership, ACLs or xattrs. A complete same-directory staging file is permissioned, synced and closed before renaming; failures before publication preserve the original. Errors after publication do not roll it back.
 - Filesystem checks assume ordinary cooperative local storage, not hostile concurrent writers, mount changes or power-loss durability. Context cancellation is checked at safe boundaries; filesystem calls are not interruptible.
@@ -198,4 +201,4 @@ Tests use injected services/transports and local HTTP fixtures, not paid API req
 
 - Compatibility is pinned to Python SDK v0.7.2, revision `f078f1e208a0d885154dc758344ae4fce77ac168`.
 - [Compatibility notes](docs/internal/compatibility.md) describe Go-specific validation, ownership, decoding, and retry differences.
-- Remaining follow-up: verified self-update is not implemented yet.
+- Release/update QA uses injected HTTP responses and temporary executables, never overwriting the developer's running CLI or publishing a release.

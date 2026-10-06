@@ -322,3 +322,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Factory failures, nil and typed-nil services and pre-ACK EOF preserve cleanup invariants. Independent aggregate QA matched the dedicated fixture. No paid calls, user daemon or release changes.
+
+## MCP read-only management CLI 19f2c1
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Status and stop skip upstream configuration, service creation, agent tokens and ownership acquisition. Fixtures use production mutual HMAC authentication, not raw management credentials. No paid calls, user daemon or release changes.

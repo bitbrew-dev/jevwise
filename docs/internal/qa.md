@@ -229,3 +229,9 @@
 - 340 source/test lines plus plan/QA, hard cap respected. Exact opened-handle current-user ownership, one protected user-only root DACL, inheritance, reparse and hardlink checks enable Windows storage.
 - Independent review and root full gates, six cross-builds and both Windows test compilations passed. Native Windows exact-head fixtures are required before merge.
 - Existing unsafe permissions are never repaired. This remains a storage foundation without background CLI exposure, paid requests or release changes.
+
+## MCP Darwin ACL privacy 19d2b
+
+- 193 source/test lines plus plan/QA, below the soft cap. Independent native ACL fixtures, repeated tests/race and root full gates passed; all six cross-builds passed.
+- Every extended ACL is refused through the pinned file descriptor. Unknown, unavailable, truncated, malformed or nonempty extended-security results fail closed; no path-based repair or permission weakening.
+- Linux mode/owner checks remain unchanged. Token/state exposure follows platform privacy completion; no paid requests, user daemon or release changes.

@@ -150,7 +150,7 @@ Release/update defaults (Windows binaries explicitly confirmed by the user): `je
 - [x] 19d2a2 - Windows privacy: enable storage with exact opened-handle owner/DACL/reparse/link validation and native Windows fixtures. Depends on 19d2a1.
 - [x] 19d2b - Darwin ACL privacy: reject extended ACLs through pinned descriptors; wire Unix validation and native macOS fixtures. Depends on 19d1b.
 - [x] 19d3a - Strict instance reads: bounded state/control-key decoding, exact keys, safe canonical metadata and absent/partial distinction. Depends on platform privacy gates.
-- [ ] 19d3a2 - Publication link validation: preserve all privacy checks for exactly one or two certified aliases. Depends on platform privacy gates.
+- [x] 19d3a2 - Publication link validation: preserve all privacy checks for exactly one or two certified aliases. Depends on platform privacy gates.
 - [ ] 19d3b - Owned publication: atomic no-overwrite state staging, pinned contents/identity and conservative rollback/cleanup. Depends on 19d3a/19d3a2.
 - [ ] 19d3c - Publication regressions: transient ACL changes, exchanged aliases and unexpected hardlinks. Depends on 19d3b, before child exposure.
 - [ ] 19e1 - Management endpoints: separate authenticated prepared/running/status/stop lifecycle, safe acknowledgements and graceful cancellation. Depends on state foundations.

@@ -156,3 +156,9 @@
 - Baseline: `7920f03`; branch: `feature/18b1-update-version-guard`; 434 changed lines, hard cap respected.
 - Soft-cap exception for passive binary/stamp inspection, checksum/version/platform guards, and actual trimmed/native Make regressions. QA found duplicate stamp copies in untrimmed Make output; adding `-trimpath` fixed it without weakening duplicate rejection.
 - Independent/root full/repeated tests, race, vet/build/tidy, fixtures and formatting passed; six stripped/trimmed builds and linked Make smoke passed. Guards never execute inspected binaries; no release requests, replacement or publication occurred.
+
+## Atomic replacement 18b2
+
+- Baseline: `6d1a04c`; branch: `feature/18b2-atomic-replace`; 444 changed lines, hard cap respected.
+- Soft-cap exception for rooted locking/owner/link/inode checks, staged publication and injected failure/cancellation/cleanup coverage. Independent/root tests, repeated fixtures, race, vet/build/tidy and formatting passed; six cross-builds and Windows test compilation passed.
+- Original bytes/inode survive prepublication failures; successful rename retains Installed state on later errors. Returned-path symlink ambiguity, mode-only preservation and cooperative-filesystem limits documented. No user executable touched; optional unchanged-metadata inode-exchange regression follows in 18c.

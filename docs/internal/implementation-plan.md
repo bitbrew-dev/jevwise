@@ -167,5 +167,5 @@ Release/update defaults (Windows binaries explicitly confirmed by the user): `je
 - [x] 19g2 - Token-file CLI: explicit file overrides environment, help/management skip token reads, lazy validation before factory. Depends on 19g1.
 - [x] 19f2c1 - Management CLI: read-only status/stop without config, service construction, agent token reads, directory creation or ownership acquisition. Depends on 19d1c/19e2.
 - [x] 19f2c2 - Background CLI: wire launch, duplicate prevention, authenticated readiness and conservative startup uncertainty. No credentials in argv. Depends on child, token and management CLI.
-- [ ] 19g3 - Child-process integration: task-owned fake backend/process fixtures for independence, duplicate starts, stop and startup failure cleanup. Depends on background CLI.
+- [x] 19g3 - Child-process integration: task-owned fake backend/process fixtures for independence, duplicate starts, stop and startup failure cleanup. Depends on background CLI.
 - [ ] 19g4 - Final docs and QA: document protocols/limits/token setup/background lifecycle, native Linux/macOS/Windows gates, six cross-builds and task-owned artifact cleanup. Login/reboot services remain deferred; do not change published v1.0.0.

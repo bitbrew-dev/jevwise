@@ -332,3 +332,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Parent launch validates before effects and verifies authenticated preparation plus publication before ACK. Only an authenticated running duplicate yields an endpoint; prepared instances require waiting. Uncertain started children are never blindly retried. No paid calls, user daemon or release changes.
+
+## MCP real test-process lifecycle 19g3
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Synthetic same-binary child fixtures cover terminal independence, duplicate and port conflicts, authenticated status/stop and startup cleanup. Exact owned exit markers and empty runtime state verify cleanup, without PID-based control. No paid calls, user daemon or release changes.

@@ -38,6 +38,20 @@ printf '%s' 'Which task should I tackle first?' | bin/jev decide --stdin \
 - `--timeout` covers the service operation, including retries and waits, after input is read.
 - `--provider codex` and `--provider claude` return a clear not-implemented error without credentials or subprocesses.
 
+## Version and platform builds
+
+```sh
+bin/jev version
+bin/jev --version
+make build-platform GOOS=windows GOARCH=amd64
+make build-platform GOOS=windows GOARCH=arm64
+```
+
+- Both version forms report version, commit, and build date without credentials, config loading, or network requests.
+- Plain `go build` reports `dev` with unknown metadata. Make injects metadata; only a clean exact tag is automatically a release version, otherwise `dev`.
+- Release linker symbols are `github.com/bitbrew-dev/jevwise/internal/buildinfo.Version`, `.Commit`, and `.Date`.
+- Make produces `build/jev-windows-amd64.exe` or `build/jev-windows-arm64.exe`. Make helpers require Unix shell tools; native Windows PowerShell can use `go build -o jev.exe ./cmd`, then `.\jev.exe --version`.
+
 ## CLI configuration
 
 Precedence: **changed flags > nonblank environment > TOML > defaults**.
@@ -144,4 +158,4 @@ Tests use injected services/transports and local HTTP fixtures, not paid API req
 
 - Compatibility is pinned to Python SDK v0.7.2, revision `f078f1e208a0d885154dc758344ae4fce77ac168`.
 - [Compatibility notes](docs/internal/compatibility.md) describe Go-specific validation, ownership, decoding, and retry differences.
-- Remaining follow-ups: version display, release checking, and verified self-update. These features are not implemented yet.
+- Remaining follow-ups: release binaries/checking and verified self-update. These features are not implemented yet.

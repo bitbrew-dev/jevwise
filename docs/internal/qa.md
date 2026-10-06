@@ -120,3 +120,9 @@
 - Baseline: `eee94f0`; feature branch: `feature/15-module-rename`.
 - Scope: module/current imports and consumer examples only; CLI/configuration names unchanged.
 - Independent/root tests, race, vet, build, tidy-diff, and formatting passed; 74 changed lines. Separate consumer and all six cross-builds (including both Windows architectures) passed. Dependencies unchanged; private specification stays unstaged.
+
+## Version reporting 16
+
+- Baseline: `5ba89cd`; branch: `feature/16-version`; private specification excluded.
+- Root version flag and subcommand must share safe, config-independent output; make metadata and Windows executable suffix checked.
+- Independent/root tests, race, vet, build, tidy-diff, formatting and linked native smoke passed; both Windows cross-builds passed. Final delta: 274 lines, below soft cap.

@@ -180,3 +180,9 @@
 - Baseline: `e38b68a`; branch: `feature/19b-mcp-http`; 432 changed lines, hard cap respected.
 - Soft-cap exception for loopback/authentication guards, bounded SDK transport and incremental SSE error sanitization. Independent source review and root full test/race/vet/build/tidy, six cross-builds, fixtures and formatting passed.
 - SDK parser/protocol errors are masked without buffering entire SSE streams. JSON-RPC HTTP-error negotiation, legacy batch rejection and live protocol fixtures are mandatory in 19b2 before CLI exposure; no real decision calls, persistent daemon or workflow edits.
+
+## MCP protocol and admission 19b2a
+
+- Baseline: `cb57af6`; branch: `feature/19b2-mcp-protocol`; 348 changed lines, hard cap respected.
+- Legacy batches are rejected before dispatch; at most four decisions run with immediate overload refusal. Sanitized HTTP JSON-RPC errors preserve code/ID and only verified public protocol revisions; live supported-version and future-fallback fixtures passed source review and implementation gates.
+- Client cancellation, escaped-output and writer/frame boundary regressions remain mandatory in 19b2b before CLI exposure. No paid API calls, persistent daemon or release/workflow changes.

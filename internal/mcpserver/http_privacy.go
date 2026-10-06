@@ -6,6 +6,9 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"slices"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // A result's JSON occurs twice on the wire, once as structured output and once
@@ -16,9 +19,11 @@ const httpEventLimit = 32 << 20
 // only one frame, sanitize errors, and retain incremental SSE flush behavior.
 type httpPrivacyWriter struct {
 	http.ResponseWriter
-	status  int
-	pending []byte
-	failed  error
+	status    int
+	pending   []byte
+	failed    error
+	committed bool
+	errorJSON bool
 }
 
 func (w *httpPrivacyWriter) WriteHeader(status int) {
@@ -26,19 +31,28 @@ func (w *httpPrivacyWriter) WriteHeader(status int) {
 		return
 	}
 	w.status = status
-	w.Header().Del("Mcp-Session-Id")
-	w.Header().Del("Content-Length")
-	if status >= 400 {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	}
-	w.ResponseWriter.WriteHeader(status)
+	w.errorJSON = status >= 400 && w.Header().Get("Content-Type") == "application/json"
+	if w.errorJSON {
+		return
+	} // Validate and redact the envelope before commitment.
+	w.commit()
 	if status >= 400 {
 		_, w.failed = io.WriteString(w.ResponseWriter, "MCP request rejected\n")
 	}
 }
 
+func (w *httpPrivacyWriter) commit() {
+	w.Header().Del("Mcp-Session-Id")
+	w.Header().Del("Content-Length")
+	if w.status >= 400 && !w.errorJSON {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	}
+	w.ResponseWriter.WriteHeader(w.status)
+	w.committed = true
+}
+
 func (w *httpPrivacyWriter) Write(data []byte) (int, error) {
-	if w.status >= 400 {
+	if w.status >= 400 && (!w.errorJSON || w.committed) {
 		return len(data), w.failed
 	}
 	if w.failed != nil {
@@ -72,6 +86,14 @@ func (w *httpPrivacyWriter) Write(data []byte) (int, error) {
 				return w.fail(errors.New("MCP frame is too large"))
 			}
 			frame, err := sanitizeRPC(w.pending)
+			if w.errorJSON {
+				var envelope struct {
+					Error json.RawMessage `json:"error"`
+				}
+				if json.Unmarshal(frame, &envelope) != nil || len(envelope.Error) == 0 || bytes.Equal(envelope.Error, []byte("null")) {
+					err = errors.New("invalid MCP error envelope")
+				}
+			}
 			if err != nil {
 				return w.fail(err)
 			}
@@ -93,6 +115,9 @@ func (w *httpPrivacyWriter) emit(data []byte) error {
 	if w.status == 0 {
 		w.WriteHeader(http.StatusOK)
 	}
+	if !w.committed {
+		w.commit()
+	}
 	n, err := w.ResponseWriter.Write(data)
 	if err == nil && n != len(data) {
 		err = io.ErrShortWrite
@@ -109,8 +134,24 @@ func (w *httpPrivacyWriter) fail(err error) (int, error) {
 	return 0, err
 }
 
-func (w *httpPrivacyWriter) Flush()  { _ = http.NewResponseController(w.ResponseWriter).Flush() }
-func (w *httpPrivacyWriter) finish() { w.pending = nil } // Never publish incomplete frames.
+func (w *httpPrivacyWriter) Flush() {
+	if w.errorJSON && !w.committed {
+		return
+	}
+	if w.status == 0 {
+		w.WriteHeader(http.StatusOK)
+	}
+	_ = http.NewResponseController(w.ResponseWriter).Flush()
+}
+
+func (w *httpPrivacyWriter) finish() {
+	w.pending = nil // Never publish incomplete frames.
+	if w.errorJSON && !w.committed {
+		w.errorJSON = false
+		w.commit()
+		_, _ = io.WriteString(w.ResponseWriter, "MCP request rejected\n")
+	}
+}
 
 func sanitizeEvent(frame []byte) ([]byte, error) {
 	var payload, metadata bytes.Buffer
@@ -145,15 +186,31 @@ func sanitizeRPC(data []byte) ([]byte, error) {
 	}
 	if failure := message["error"]; len(failure) != 0 && !bytes.Equal(failure, []byte("null")) {
 		var details struct {
-			Code int `json:"code"`
+			Code int             `json:"code"`
+			Data json.RawMessage `json:"data"`
 		}
 		if err := json.Unmarshal(failure, &details); err != nil {
 			return nil, errors.New("invalid MCP error frame")
 		}
-		message["error"], _ = json.Marshal(struct {
+		safe := struct {
 			Code    int    `json:"code"`
 			Message string `json:"message"`
-		}{details.Code, "MCP request failed"})
+			Data    any    `json:"data,omitempty"`
+		}{Code: details.Code, Message: "MCP request failed"}
+		if details.Code == mcp.CodeUnsupportedProtocolVersion {
+			var versions struct {
+				Supported []string `json:"supported"`
+			}
+			known := mcp.SupportedProtocolVersions()
+			valid := json.Unmarshal(details.Data, &versions) == nil && len(versions.Supported) > 0 && len(versions.Supported) <= len(known)
+			for _, version := range versions.Supported {
+				valid = valid && slices.Contains(known, version)
+			}
+			if valid {
+				safe.Data = versions
+			} // Keep only verified public revision names.
+		}
+		message["error"], _ = json.Marshal(safe)
 		return json.Marshal(message)
 	}
 	return data, nil

@@ -306,3 +306,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Bounded token reads verify pinned ownership, modes, ACLs, identity and single-link privacy before and after reading. Explicit token-file Windows DACLs must be protected; unsafe files are never repaired. No paid calls, user daemon or release changes.
+
+## MCP explicit token-file CLI 19g2
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Explicit protected token files override environment without fallback. Lazy help and management execution avoid token reads; service construction follows validation. No paid calls, user daemon or release changes.

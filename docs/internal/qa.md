@@ -276,3 +276,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Fresh domain-separated request and response HMAC proofs never transmit the management key. Response replay and port impersonation are refused; signed requests are not nonce-cached, and stop is terminal and idempotent. No paid calls, user daemon or release changes.
+
+## MCP separate runtime routing 19e3
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Only exact escaped management paths reach the independently authenticated handler. MCP agent protection and cooperative lifetime behavior remain unchanged. No paid calls, user daemon or release changes.

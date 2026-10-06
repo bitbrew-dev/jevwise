@@ -204,3 +204,9 @@
 - Baseline: `1acea95`; branch: `feature/19c2-mcp-cli`; 295 changed lines, below the soft cap.
 - Lazy token/address/config/service resolution, separate credentials, owned cleanup, endpoint-only output and fixed safe errors passed independent/root full and repeated tests, race, vet/build/tidy, fixtures, formatting and six cross-builds.
 - QA found readiness ignored short writes; full-length checking and cause/cleanup regression fixed it. README documents unreleased scope, setup, protocol/batch support, 32 MiB client event setting, cancellation and cooperative callback/writer limits. No paid API calls or persistent daemon.
+
+## MCP runtime ownership 19d1a
+
+- Baseline: `5abca68`; 405 source/test lines plus this plan/QA, hard cap respected. Independent source review, repeated tests/race, full gates and all six cross-builds passed.
+- The lease never adopts or removes preexisting, exchanged or nonempty locks. Store handles stay open until lease cleanup.
+- This is a mode/owner-only Unix foundation, with Windows unsupported. Darwin ACL and Windows privacy gates remain mandatory before state, key or token-file exposure. No daemon, paid calls or release changes.

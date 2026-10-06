@@ -145,7 +145,7 @@ Release/update defaults (Windows binaries explicitly confirmed by the user): `je
 - [x] 19c2 - Foreground command: lazy `jev mcp` registration/config/service ownership, endpoint output, help/no-effects and injected failures, plus protocol/cancellation/event-limit usage docs. Depends on 19c1.
 - [x] 19d1a - Runtime ownership: private Unix directory validation, exclusive inode-pinned lease and conservative cleanup. Mode-only foundation, no state/secrets yet; depends on 19c2.
 - [x] 19d1b - Private file operations: bounded exclusive writes and descriptor-validated reads, with fault fixtures. Depends on 19d1a.
-- [ ] 19d1c - Read-only storage: open existing private runtime directories without creating them for status/stop. Depends on 19d1b.
+- [x] 19d1c - Read-only storage: open existing private runtime directories without creating them for status/stop. Depends on 19d1b.
 - [x] 19d2a1 - Private creation hooks: exclusive handle-relative Windows creation with explicit user owner/protected ACL, plus portable hooks. Depends on 19d1b.
 - [x] 19d2a2 - Windows privacy: enable storage with exact opened-handle owner/DACL/reparse/link validation and native Windows fixtures. Depends on 19d2a1.
 - [x] 19d2b - Darwin ACL privacy: reject extended ACLs through pinned descriptors; wire Unix validation and native macOS fixtures. Depends on 19d1b.

@@ -23,15 +23,24 @@ func (e *storageError) Unwrap() error { return e.cause }
 type Store struct{ root *os.Root }
 
 // OpenStore creates only the private directory leaf. It never repairs unsafe state.
-func OpenStore(directory string) (*Store, error) {
+func OpenStore(directory string) (*Store, error) { return openStore(directory, true) }
+
+// OpenExistingStore opens validated existing storage without creating any path.
+// A missing directory remains absent and is inspectable with os.ErrNotExist.
+// Opening and closing never acquire ownership or remove runtime state.
+func OpenExistingStore(directory string) (*Store, error) { return openStore(directory, false) }
+
+func openStore(directory string, create bool) (*Store, error) {
 	if err := storageSupported(); err != nil {
 		return nil, &storageError{err}
 	}
 	if !filepath.IsAbs(directory) || filepath.Clean(directory) != directory {
 		return nil, &storageError{errors.New("runtime path must be absolute")}
 	}
-	if err := mkdirPrivate(directory); err != nil && !errors.Is(err, os.ErrExist) {
-		return nil, &storageError{err}
+	if create {
+		if err := mkdirPrivate(directory); err != nil && !errors.Is(err, os.ErrExist) {
+			return nil, &storageError{err}
+		}
 	}
 	before, err := os.Lstat(directory)
 	if err != nil || !privateInfo(before, true) {

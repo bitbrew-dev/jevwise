@@ -138,3 +138,9 @@
 - Baseline: `3f6671d`; branch: `feature/17b-release-check`; metadata foundation only; CLI registration split into 17c.
 - Soft-cap exception: bounded transport, strict uint64 versions, client isolation, cancellation and safe cause/closure coverage; CLI split into 17c preserves readability.
 - Independent/root tests, repeated/race tests, vet/build/tidy and formatting passed; 390 changed lines. Dedicated idle/TLS/dial bounds, caller-controlled total deadline; no real API or paid requests in QA.
+
+## Release-check CLI 17c
+
+- Baseline: `1a72d1b`; branch: `feature/17c-release-check-cli`; 298 changed lines, below soft cap.
+- Independent/root full tests, race, repeated update tests, vet/build/tidy, fixtures and formatting passed; native offline smoke and all six cross-builds passed.
+- Flag-only positive deadline, caller cancellation, safe errors/short writes, strict comparisons and unknown/absent releases covered. No config/service credentials, binary downloads, executable writes or real release API requests in QA.

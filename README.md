@@ -52,6 +52,18 @@ make build-platform GOOS=windows GOARCH=arm64
 - Release linker symbols are `github.com/bitbrew-dev/jevwise/internal/buildinfo.Version`, `.Commit`, and `.Date`.
 - Make produces `build/jev-windows-amd64.exe` or `build/jev-windows-arm64.exe`. Make helpers require Unix shell tools; native Windows PowerShell can use `go build -o jev.exe ./cmd`, then `.\jev.exe --version`.
 
+## Release checks
+
+```sh
+bin/jev update --check
+bin/jev update --check --timeout 20s
+```
+
+- Explicitly checks the latest stable GitHub release, without downloading a binary or changing files. No background checks, API credentials, or decision configuration are used.
+- `--timeout` is a positive flag-only deadline, default `10s`; decision timeout environment/config values do not affect updates.
+- Reports newer/current releases or no published release. Development/unknown builds report the latest release without inventing a version comparison.
+- Accepts canonical stable `vX.Y.Z` tags only; prereleases/drafts and malformed or oversized responses are refused. Automatic self-update is a separate follow-up; currently use `--check`.
+
 ## Release binaries
 
 The release-assets workflow attaches raw CLI binaries and `SHA256SUMS` to an existing stable [GitHub release](https://github.com/bitbrew-dev/jevwise/releases). It does not create versions or releases.
@@ -175,4 +187,4 @@ Tests use injected services/transports and local HTTP fixtures, not paid API req
 
 - Compatibility is pinned to Python SDK v0.7.2, revision `f078f1e208a0d885154dc758344ae4fce77ac168`.
 - [Compatibility notes](docs/internal/compatibility.md) describe Go-specific validation, ownership, decoding, and retry differences.
-- Remaining follow-ups: release checking and verified self-update. These features are not implemented yet.
+- Remaining follow-up: verified self-update is not implemented yet.

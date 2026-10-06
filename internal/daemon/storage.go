@@ -30,7 +30,7 @@ func OpenStore(directory string) (*Store, error) {
 	if !filepath.IsAbs(directory) || filepath.Clean(directory) != directory {
 		return nil, &storageError{errors.New("runtime path must be absolute")}
 	}
-	if err := os.Mkdir(directory, 0o700); err != nil && !errors.Is(err, os.ErrExist) {
+	if err := mkdirPrivate(directory); err != nil && !errors.Is(err, os.ErrExist) {
 		return nil, &storageError{err}
 	}
 	before, err := os.Lstat(directory)
@@ -42,7 +42,7 @@ func OpenStore(directory string) (*Store, error) {
 		return nil, &storageError{err}
 	}
 	store := &Store{root}
-	opened, err := store.directoryInfo()
+	opened, err := store.directoryInfo(true)
 	if err != nil || !os.SameFile(before, opened) {
 		_ = root.Close()
 		return nil, &storageError{errors.Join(err, errors.New("runtime directory changed"))}
@@ -50,7 +50,7 @@ func OpenStore(directory string) (*Store, error) {
 	return store, nil
 }
 
-func (s *Store) directoryInfo() (os.FileInfo, error) {
+func (s *Store) directoryInfo(protected bool) (os.FileInfo, error) {
 	if s == nil || s.root == nil {
 		return nil, errors.New("runtime store unavailable")
 	}
@@ -59,10 +59,10 @@ func (s *Store) directoryInfo() (os.FileInfo, error) {
 		return nil, err
 	}
 	info, err := file.Stat()
-	err = errors.Join(err, file.Close())
-	if err == nil && !privateInfo(info, true) {
+	if err == nil && !privateHandle(file, true, protected) {
 		err = errors.New("runtime directory is no longer private")
 	}
+	err = errors.Join(err, file.Close())
 	return info, err
 }
 
@@ -88,7 +88,7 @@ type Lease struct {
 }
 
 func (s *Store) Acquire() (*Lease, error) {
-	if _, err := s.directoryInfo(); err != nil {
+	if _, err := s.directoryInfo(true); err != nil {
 		return nil, &storageError{err}
 	}
 	if err := s.root.Mkdir(lockName, 0o700); err != nil {
@@ -105,7 +105,7 @@ func (s *Store) Acquire() (*Lease, error) {
 	if err != nil {
 		return nil, &storageError{err}
 	}
-	opened, err := (&Store{root}).directoryInfo()
+	opened, err := (&Store{root}).directoryInfo(false)
 	if err != nil || !os.SameFile(info, opened) {
 		_ = root.Close()
 		return nil, &storageError{errors.Join(err, errors.New("runtime lock changed"))}
@@ -133,7 +133,7 @@ func (l *Lease) Close() (err error) {
 		}
 		l.closeErr = err
 	}()
-	if _, err := l.store.directoryInfo(); err != nil {
+	if _, err := l.store.directoryInfo(true); err != nil {
 		return err
 	}
 	info, err := l.store.root.Lstat(lockName)

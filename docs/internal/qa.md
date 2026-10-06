@@ -210,3 +210,9 @@
 - Baseline: `5abca68`; 405 source/test lines plus this plan/QA, hard cap respected. Independent source review, repeated tests/race, full gates and all six cross-builds passed.
 - The lease never adopts or removes preexisting, exchanged or nonempty locks. Store handles stay open until lease cleanup.
 - This is a mode/owner-only Unix foundation, with Windows unsupported. Darwin ACL and Windows privacy gates remain mandatory before state, key or token-file exposure. No daemon, paid calls or release changes.
+
+## MCP private files 19d1b
+
+- 355 source/test lines plus plan/QA, under the hard cap. Independent source audit, repeated/race coverage and root full gates passed.
+- Allowlisted, bounded reads and exclusive writes validate pinned descriptors. Partial/short/write/sync/close failures preserve exchanged files and withhold unreadable secrets.
+- Darwin ACL and Windows explicit-owner/DACL slices still precede state exposure. No paid requests or persistent service started.

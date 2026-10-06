@@ -98,3 +98,11 @@
 - Full fresh tests/race, tidy-diff, vet/build, and whitespace checks passed; local HTTP fixtures only, no paid requests.
 - Every resumed PR respects the 450-line hard cap. Soft-cap exceptions record deterministic endpoint/retry/input safety coverage.
 - Final source/module/CLI behavior and remaining skill/version/update follow-ups are documented. Cleanup follows successful merge, preserving the private spec and unrelated files.
+
+## Skill foundation 13
+
+- Parent: `d13b424`; branch: `feature/13-skill`; 377 changed lines including plan and this ledger.
+- Soft-cap exception: readable fixed-URL transport, bounded content validation, and before/after callback cancellation coverage; below hard 450.
+- Independent review/repeated tests/race/vet passed; root full tests/race, tidy-diff, vet/build, and whitespace checks passed.
+- Empty-front-matter panic found during root review was corrected and regression-tested. No credentials/cookies/redirects, body limits and closure verified.
+- Command registration waits for ticket 14, preserving the confirmed local-install default. Fixtures only; no paid requests or real downloads in QA.

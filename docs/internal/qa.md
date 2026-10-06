@@ -48,3 +48,12 @@
 - Publish only the oldest unmerged feature PR at a time, with prerequisites already in its base.
 - Retain task-owned worktrees under `/private/tmp/feature-x/` until PRs are merged without errors.
 - Then remove only these task-owned worktrees and leftover files; preserve other work and installed tools.
+
+## Resumed endpoint QA: 2026-10-06
+
+| Branch | Parent | Changed lines | QA | Outcome |
+| --- | --- | ---: | --- | --- |
+| `feature/06-endpoints` | `71d01c4` | 430 | Independent pinned-contract/security review; fresh full unit/race tests, tidy check, vet, build; fixtures only | Passed; soft-cap exception for overrides/raw/custom decode coverage |
+
+- State and question validation before extra-body merge is an intentional stricter Go rule. Explicit model pointers preserve blank values; timeout zero inherits.
+- Standalone raw decoding performs no retries. `SystemOneInto` custom decoding shares the HTTP attempt helper for later retry predicates; it follows standard Go JSON partial-mutation semantics.

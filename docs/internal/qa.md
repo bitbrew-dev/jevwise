@@ -281,3 +281,8 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Only exact escaped management paths reach the independently authenticated handler. MCP agent protection and cooperative lifetime behavior remain unchanged. No paid calls, user daemon or release changes.
+
+## MCP private stdin bootstrap 19f1a
+
+- Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
+- Bounded strict framing, an expiring prepared lease and mutex-gated acknowledgement establish an independently owned lifetime. Caller-supplied validation is pure. No paid calls, user daemon or release changes.

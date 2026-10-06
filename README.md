@@ -202,3 +202,18 @@ Tests use injected services/transports and local HTTP fixtures, not paid API req
 - Compatibility is pinned to Python SDK v0.7.2, revision `f078f1e208a0d885154dc758344ae4fce77ac168`.
 - [Compatibility notes](docs/internal/compatibility.md) describe Go-specific validation, ownership, decoding, and retry differences.
 - Release/update QA uses injected HTTP responses and temporary executables, never overwriting the developer's running CLI or publishing a release.
+
+## Local MCP (unreleased, after v1.0.0)
+
+Configure upstream credentials as for `jev decide`, then choose a separate random agent token:
+
+```sh
+JEV_MCP_TOKEN='YOUR_SEPARATE_RANDOM_TOKEN' jev mcp --listen 127.0.0.1:8080
+```
+
+- Connect an HTTP-capable local agent to `http://127.0.0.1:8080/mcp` with `Authorization: Bearer <your token>`. Never share the upstream API key with the agent.
+- The only tool is `decide`, with `prompt` and at least two distinct `options`; results contain the existing probabilities and usage. Normal decisions can incur upstream API charges.
+- Stateless Streamable HTTP uses POST-SSE responses, not legacy `/sse` or standalone GET streams. Supported revisions: 2026-07-28, 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05. Batches are rejected.
+- Limits: 1 MiB request, four concurrent decisions without queuing, 8 MiB decision JSON and 32 MiB SSE event. Go SDK clients should set `StreamableClientTransport.MaxEventSize: 32 << 20` for maximum-size results; its default is 16 MiB.
+- `--timeout` bounds each decision, not server lifetime. Modern request disconnect cancels work; older protocols rely on decision deadlines and server shutdown. Ctrl+C cancels active decisions and drains connections for up to five seconds.
+- Ready/service callbacks and caller-owned output writers must cooperate with cancellation. This foreground server accepts literal loopback addresses only, validates Host/Origin, and never trusts proxy headers. Background commands follow in separate slices.

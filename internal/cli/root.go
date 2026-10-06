@@ -7,6 +7,7 @@ import (
 
 	"github.com/bitbrew-dev/jevwise/internal/buildinfo"
 	"github.com/bitbrew-dev/jevwise/internal/config"
+	"github.com/bitbrew-dev/jevwise/internal/mcpserver"
 	"github.com/bitbrew-dev/jevwise/internal/update"
 	"github.com/phuslu/log"
 	"github.com/spf13/cobra"
@@ -57,6 +58,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	releaseClient := update.NewClient(nil)
 	cmd.AddCommand(newUpdate(updateOps{releaseClient.Latest, releaseClient.Download, update.Replace, runtime.GOOS, runtime.GOARCH}, buildinfo.Version))
 	cmd.AddCommand(newDecide(factory))
+	cmd.AddCommand(newMCP(factory, mcpserver.Run))
 	cmd.AddCommand(newSkill(newSkillFetch(nil), installSkill))
 	return cmd
 }

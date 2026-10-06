@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"reflect"
 	"time"
 	"unicode/utf8"
@@ -64,7 +65,7 @@ func New(lifetime context.Context, svc service.DecisionService, timeout time.Dur
 	if err := lifetime.Err(); err != nil {
 		return nil, &toolError{"decision server lifetime has ended", err}
 	}
-	server := mcp.NewServer(&mcp.Implementation{Name: "jevwise", Version: buildinfo.Version}, nil)
+	server := mcp.NewServer(&mcp.Implementation{Name: "jevwise", Version: buildinfo.Version}, &mcp.ServerOptions{Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
 	server.AddTool(&mcp.Tool{Name: "decide", Description: "Choose among distinct options using Jev probabilities.",
 		InputSchema: inputSchema, OutputSchema: outputSchema}, decisionHandler(lifetime, svc, timeout))
 	return server, nil

@@ -174,3 +174,9 @@
 - Baseline: `4237ea0`; branch: `feature/19a-mcp-tool`; 449 changed lines, hard cap respected.
 - Soft-cap exception for SDK v1.8.0 dependency pins, explicit schemas, duplicate/null/unknown-field rejection, input/output bounds and protocol/cancellation/privacy coverage. Independent/root full/repeated tests, race, vet/build/tidy, fixtures and formatting passed; six all-package cross-builds and both Windows test compilations passed.
 - Review caught a duplicate prompt ending in null that retained the earlier string; token-based duplicate rejection fixed it with regressions. Structured results preserve service probabilities and nullable usage; fixed wire errors retain causes only server-side. No HTTP listener, CLI registration, background process, real decision/release request or workflow change in this foundation slice.
+
+## MCP HTTP security 19b1
+
+- Baseline: `e38b68a`; branch: `feature/19b-mcp-http`; 432 changed lines, hard cap respected.
+- Soft-cap exception for loopback/authentication guards, bounded SDK transport and incremental SSE error sanitization. Independent source review and root full test/race/vet/build/tidy, six cross-builds, fixtures and formatting passed.
+- SDK parser/protocol errors are masked without buffering entire SSE streams. JSON-RPC HTTP-error negotiation, legacy batch rejection and live protocol fixtures are mandatory in 19b2 before CLI exposure; no real decision calls, persistent daemon or workflow edits.

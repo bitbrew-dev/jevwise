@@ -18,6 +18,9 @@ import (
 type RunOptions struct {
 	Address, Token string
 	Ready          func(context.Context, string) error
+	// Management must independently authenticate its private control credential.
+	// The MCP agent bearer must not authorize management operations.
+	Management http.Handler
 }
 
 // Run binds an exclusive literal-loopback listener and serves until cancellation.
@@ -67,6 +70,17 @@ func Serve(ctx context.Context, listener net.Listener, svc service.DecisionServi
 	handler, err := NewHTTP(server, listener.Addr().String(), options.Token)
 	if err != nil {
 		return err
+	}
+	if options.Management != nil {
+		mcpHandler := handler
+		handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.EscapedPath() {
+			case "/_jev/status", "/_jev/stop":
+				options.Management.ServeHTTP(w, r)
+			default:
+				mcpHandler.ServeHTTP(w, r)
+			}
+		})
 	}
 	httpServer := &http.Server{
 		Handler: handler, MaxHeaderBytes: HTTPHeaderLimit,

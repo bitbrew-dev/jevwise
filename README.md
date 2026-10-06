@@ -76,6 +76,8 @@ The release-assets workflow attaches raw CLI binaries and `SHA256SUMS` to an exi
 
 - Download the exact OS/architecture asset. Unix users must make a downloaded binary executable; Windows users run the `.exe` directly.
 - `SHA256SUMS` hashes the exact raw binary bytes. Verify the hash before use. Checksums detect corruption, not a compromised publisher; trust remains the repository and GitHub/TLS.
+- The internal update downloader verifies exact platform asset names, metadata sizes and SHA-256 before returning bytes. Binary/manifest limits are 64 MiB/64 KiB; downloads use fixed release URLs and bounded HTTPS redirects to allowlisted GitHub hosts, without credentials or cookies.
+- This download foundation is not yet wired to automatic installation. `jev update --check` still performs metadata checks only; executable replacement comes in a separate reviewed feature.
 - Your manual semantic-release workflow still owns release creation. Asset publication runs after a published release, with a manual tag-based fallback. No release is created during development QA.
 - Publication rejects existing target assets and uploads the checksum manifest last. If publication fails midway, inspect and remove incomplete assets manually before retrying; no automatic overwrite/delete/resume occurs.
 - Native CI tests Linux, macOS, and Windows CLI execution. Windows arm64 is cross-built, not claimed as natively executed.

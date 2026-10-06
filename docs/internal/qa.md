@@ -144,3 +144,9 @@
 - Baseline: `1a72d1b`; branch: `feature/17c-release-check-cli`; 298 changed lines, below soft cap.
 - Independent/root full tests, race, repeated update tests, vet/build/tidy, fixtures and formatting passed; native offline smoke and all six cross-builds passed.
 - Flag-only positive deadline, caller cancellation, safe errors/short writes, strict comparisons and unknown/absent releases covered. No config/service credentials, binary downloads, executable writes or real release API requests in QA.
+
+## Verified download 18a
+
+- Baseline: `236ad86`; branch: `feature/18a-verified-download`; 446 changed lines, hard cap respected.
+- Soft-cap exception for strict manifest/metadata parsing, exact-size bounds, restricted redirects and error/cancellation coverage; replacement and CLI integration stay separate.
+- Independent/root full and repeated tests, race, vet/build/tidy, fixtures and formatting passed; native offline help and six cross-builds passed. Fixtures only, no real downloads or release calls; no executable writes.

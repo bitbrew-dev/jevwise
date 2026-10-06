@@ -17,7 +17,12 @@ import (
 type mcpRunner func(context.Context, service.DecisionService, time.Duration, mcpserver.RunOptions) error
 
 func newMCP(factory ServiceFactory, run mcpRunner) *cobra.Command {
+	return newMCPWithBackground(factory, run, daemon.Start)
+}
+
+func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarter) *cobra.Command {
 	var address, tokenFile, runtimeDir string
+	var background bool
 	cmd := &cobra.Command{Use: "mcp", Short: "Serve the decide tool over authenticated local MCP HTTP",
 		Args: func(_ *cobra.Command, args []string) error {
 			if len(args) != 0 {
@@ -58,6 +63,9 @@ func newMCP(factory ServiceFactory, run mcpRunner) *cobra.Command {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
+			if background {
+				return runMCPBackground(cmd, cfg, canonical, token, runtimeDir, start)
+			}
 			svc, cleanup, err := factory(cfg)
 			if cleanup != nil {
 				defer cleanup()
@@ -92,6 +100,7 @@ func newMCP(factory ServiceFactory, run mcpRunner) *cobra.Command {
 			return nil
 		}}
 	cmd.Flags().StringVar(&address, "listen", "127.0.0.1:8080", "Literal loopback IP:port for /mcp; token from JEV_MCP_TOKEN")
+	cmd.Flags().BoolVar(&background, "background", false, "Start an independent MCP background process")
 	cmd.PersistentFlags().StringVar(&tokenFile, "token-file", "", "Read an owner-private bearer token file instead of JEV_MCP_TOKEN")
 	cache, _ := os.UserCacheDir()
 	if cache != "" {

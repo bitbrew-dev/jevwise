@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"os"
 	"reflect"
 	"time"
 
@@ -93,7 +94,7 @@ func runMCPChild(startup *daemon.Startup, boot daemon.Bootstrap, factory Service
 				if err := ctx.Err(); err != nil {
 					return err
 				}
-				publication, err = daemon.Publish(store, daemon.State{Schema: 1, Address: listener.Addr().String(), Version: buildinfo.Version, Instance: boot.Instance}, boot.ControlToken)
+				publication, err = daemon.Publish(store, daemon.State{Schema: 2, Address: listener.Addr().String(), Version: buildinfo.Version, Instance: boot.Instance, PID: os.Getpid()}, boot.ControlToken)
 				if err != nil {
 					return err
 				}

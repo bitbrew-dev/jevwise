@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -31,6 +32,9 @@ func TestMain(m *testing.M) {
 func runProcessFixture() (code int) {
 	exitMarker := os.Getenv("JEVWISE_PROCESS_EXIT")
 	defer func() { _ = os.WriteFile(exitMarker, []byte("exited"), 0600) }()
+	if err := os.WriteFile(exitMarker+".pid", []byte(strconv.Itoa(os.Getpid())), 0600); err != nil {
+		return 1
+	}
 	factory := func(cfg config.Config) (service.DecisionService, func(), error) {
 		if cfg.Model != "fixture" || cfg.BaseURL != "http://127.0.0.1:1" {
 			return nil, nil, errors.New("invalid fixture configuration")
@@ -144,6 +148,11 @@ func TestMCPActualDetachedChildLifecycle(t *testing.T) {
 	state, key, err := daemon.Read(store)
 	if err != nil || state.Instance != boot.Instance || key != boot.ControlToken {
 		t.Fatal("actual child did not publish verified state", err)
+	}
+	pidData, err := os.ReadFile(exitMarker + ".pid")
+	childPID, parseErr := strconv.Atoi(string(pidData))
+	if err != nil || parseErr != nil || state.Schema != 2 || state.PID != childPID || childPID <= 0 || childPID == os.Getpid() {
+		t.Fatal("stored PID did not identify the actual child instead of its launcher", err, parseErr)
 	}
 	stateJSON, err := store.Read("state.json", 4096)
 	if err != nil || bytes.Contains(stateJSON, []byte(boot.Config.APIKey)) || bytes.Contains(stateJSON, []byte(boot.AgentToken)) || bytes.Contains(stateJSON, []byte(boot.ControlToken)) {
@@ -298,7 +307,8 @@ func TestMCPActualBackgroundCLIStartStatusDuplicateAndStop(t *testing.T) {
 	managementArgs := []string{"--runtime-dir", fixture.RuntimeDir, "--config", filepath.Join(t.TempDir(), "missing.toml"),
 		"--token-file", filepath.Join(t.TempDir(), "missing-token")}
 	output, err = execute(append([]string{"mcp", "status"}, managementArgs...)...)
-	if err != nil || output != "MCP background instance is running\n" {
+	pidData, pidErr := os.ReadFile(marker + ".pid")
+	if err != nil || pidErr != nil || output != "MCP background instance is running\nPID: "+string(pidData)+" (inspection only)\n" {
 		t.Fatal("status loaded invalid config or missing agent token file", err)
 	}
 	if data := childToolCall(t, captured); !bytes.Contains(data, []byte(`"choice":"a"`)) {

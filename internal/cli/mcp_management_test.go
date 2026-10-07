@@ -30,13 +30,16 @@ func managementRoot(t *testing.T) *cobra.Command {
 	})
 }
 
-func managementState(t *testing.T, directory, address string) {
+func managementState(t *testing.T, directory, address string, pid ...int) {
 	t.Helper()
 	store, err := daemon.OpenStore(directory)
 	if err != nil {
 		t.Fatal(err)
 	}
 	state := daemon.State{Schema: 1, Address: address, Version: "dev", Instance: strings.Repeat("i", 32)}
+	if len(pid) != 0 {
+		state.Schema, state.PID = 2, pid[0]
+	}
 	data, err := json.Marshal(state)
 	if err != nil {
 		t.Fatal(err)
@@ -142,6 +145,56 @@ func TestMCPManagementVerifiedPhasesAndStop(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestMCPManagementPIDIsInspectionOnlyAfterAuthentication(t *testing.T) {
+	for _, authenticated := range []bool{true, false} {
+		server := httptest.NewUnstartedServer(nil)
+		address := server.Listener.Addr().String()
+		key := strings.Repeat("k", 32)
+		if !authenticated {
+			key = strings.Repeat("x", 32)
+		}
+		var stops atomic.Int32
+		management, err := daemon.NewManagement(address, strings.Repeat("i", 32), key, func() { stops.Add(1) })
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := management.MarkRunning(); err != nil {
+			t.Fatal(err)
+		}
+		server.Config.Handler = management.Handler()
+		server.Start()
+		defer server.Close()
+		directory := filepath.Join(t.TempDir(), "runtime")
+		// Deliberately unrelated to the HTTP server's actual PID: this value
+		// must only be printed, never establish identity or authorize a stop.
+		managementState(t, directory, address, 424242)
+		before, err := os.ReadFile(filepath.Join(directory, "state.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, action := range []string{"status", "stop"} {
+			out, _, err := execute(managementRoot(t), lazyManagementArgs(action, directory)...)
+			if !authenticated {
+				if err == nil || out != "" || stops.Load() != 0 {
+					t.Fatal("unverified state disclosed a PID or authorized stop", err)
+				}
+				continue
+			}
+			want := "MCP background instance is running\nPID: 424242 (inspection only)\n"
+			if action == "stop" {
+				want = "MCP background stop acknowledged\n"
+			}
+			if err != nil || out != want {
+				t.Fatalf("PID %s = %q, %v", action, out, err)
+			}
+		}
+		after, err := os.ReadFile(filepath.Join(directory, "state.json"))
+		if err != nil || !bytes.Equal(before, after) || (authenticated && stops.Load() != 1) {
+			t.Fatal("PID metadata changed management authority or state", err)
+		}
 	}
 }
 

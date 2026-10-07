@@ -251,6 +251,8 @@ bin/jev mcp stop
 
 ### Agent connection and limits
 
+For token-safe Codex and Claude Code setup, discovery checks and cleanup, follow the [local agent onboarding guide](docs/mcp-agents.md).
+
 Connect an HTTP-capable local agent to `http://127.0.0.1:8080/mcp`, supplying `Authorization: Bearer <agent-token>`. The only tool is `decide`: send `prompt` and at least two distinct `options`. Results contain Jev probabilities and optional usage; ordinary decisions can incur upstream API charges.
 
 - Stateless Streamable HTTP uses POST with SSE responses, not legacy `/sse` or standalone GET streams. GET/DELETE do not create sessions. Supported revisions: 2026-07-28, 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05; JSON-RPC batches are rejected.

@@ -169,3 +169,7 @@ Release/update defaults (Windows binaries explicitly confirmed by the user): `je
 - [x] 19f2c2 - Background CLI: wire launch, duplicate prevention, authenticated readiness and conservative startup uncertainty. No credentials in argv. Depends on child, token and management CLI.
 - [x] 19g3 - Child-process integration: task-owned fake backend/process fixtures for independence, duplicate starts, stop and startup failure cleanup. Depends on background CLI.
 - [x] 19g4 - Final docs and QA: document protocols/limits/token setup/background lifecycle, native Linux/macOS/Windows gates, six cross-builds and task-owned artifact cleanup. Login/reboot services remain deferred; do not change published v1.0.0.
+
+## Private release publishing repair
+
+- [x] 20 - Private release assets: accept the authenticated upstream repository whether public or private, scope credentials to one fixed-URL source fetch without persisting them or passing them to builds, and retain immutable-source/checksum/no-overwrite protections. Add offline private/public/failure/credential-isolation regressions and document the existing anonymous updater limitation. One feature PR, soft 300 / hard 450 lines; no repository visibility changes, release dispatch, new tags or asset uploads during QA.

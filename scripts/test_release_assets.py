@@ -1,5 +1,6 @@
-"""Offline release fixtures: API calls and subprocesses are always mocked."""
+"""Offline release fixtures: API/fetch/build calls mocked; Git config parsed locally."""
 import json
+import base64
 import io
 import os
 from pathlib import Path
@@ -13,6 +14,7 @@ TAG, COMMIT = "v1.2.3", "a" * 40
 STABLE = {"tag_name": TAG, "id": 42, "draft": False, "prerelease": False,
           "html_url": f"https://github.com/{release.REPOSITORY}/releases/tag/{TAG}"}
 META = {"tag": TAG, "commit": COMMIT, "date": "2026-10-07T00:00:00Z", "release_id": 42}
+UPSTREAM = {"full_name": release.REPOSITORY, "private": False}
 ENV = {"GITHUB_REPOSITORY": release.REPOSITORY, "EVENT_NAME": "workflow_dispatch", "GITHUB_REF": "refs/heads/main"}
 
 
@@ -42,24 +44,128 @@ class ReleaseFixtures(unittest.TestCase):
         self.assertEqual(len(set(names)), 6)
         self.assertEqual(names[-2:], ["jev_v1.2.3_windows_amd64.exe", "jev_v1.2.3_windows_arm64.exe"])
 
+    @patch.dict(os.environ, {"GH_TOKEN": "fixture-token"})
     @patch.object(release, "run", side_effect=["", "", COMMIT, "", "1791331200"])
-    @patch.object(release, "api", side_effect=[{"private": False}, STABLE])
+    @patch.object(release, "api", side_effect=[UPSTREAM, STABLE])
     def test_plan_latest_fallback_and_ancestry(self, api, run):
         result = release.plan(ENV)
         self.assertEqual(result, META)
         api.assert_any_call("releases/latest")
         self.assertIn(["git", "merge-base", "--is-ancestor", COMMIT, "refs/remotes/origin/main"], [call.args[0] for call in run.call_args_list])
 
+    @patch.dict(os.environ, {"GH_TOKEN": "fixture-token"})
     def test_plan_guards_and_release_identity(self):
         for change in ({"GITHUB_REPOSITORY": "fork/repo"}, {"GITHUB_REF": "refs/heads/other"}, {"EVENT_NAME": "push"}, {"INPUT_TAG": "bad"}):
-            with patch.object(release, "api", return_value={"private": False}), self.assertRaises(ValueError):
+            with patch.object(release, "api", return_value=UPSTREAM), self.assertRaises(ValueError):
                 release.plan(dict(ENV, **change))
         for change in ({"draft": True}, {"prerelease": True}, {"id": True}, {"html_url": "https://evil.example"}):
             with self.assertRaises(ValueError):
                 release.stable_release(dict(STABLE, **change))
         for outputs in (["dirty"], ["", "", COMMIT, subprocess.CalledProcessError(1, "git")]):
-            with patch.object(release, "api", side_effect=[{"private": False}, STABLE]), patch.object(release, "run", side_effect=outputs), self.assertRaises((ValueError, subprocess.CalledProcessError)):
+            with patch.object(release, "api", side_effect=[UPSTREAM, STABLE]), patch.object(release, "run", side_effect=outputs), self.assertRaises((ValueError, subprocess.CalledProcessError)):
                 release.plan(ENV)
+
+    @patch.dict(os.environ, {"GH_TOKEN": "fixture-token"})
+    def test_public_and_private_published_releases_keep_source_guards(self):
+        events = [dict(ENV, INPUT_TAG=TAG), dict(ENV, EVENT_NAME="release",
+                  EVENT_ACTION="published", EVENT_TAG=TAG)]
+        for private in (False, True):
+            for environment in events:
+                with self.subTest(private=private, event=environment["EVENT_NAME"]):
+                    with patch.object(release, "api", side_effect=[dict(UPSTREAM, private=private), STABLE]), \
+                            patch.object(release, "run", side_effect=["", "", COMMIT, "", "1791331200"]) as run:
+                        self.assertEqual(release.plan(environment), META)
+                    fetch = run.call_args_list[1]
+                    self.assertEqual(fetch.args[0], ["git", "fetch", "--no-tags",
+                                     f"https://github.com/{release.REPOSITORY}.git",
+                                     "refs/heads/main:refs/remotes/origin/main",
+                                     f"refs/tags/{TAG}:refs/tags/{TAG}"])
+                    self.assertIn(["git", "merge-base", "--is-ancestor", COMMIT,
+                                   "refs/remotes/origin/main"], [call.args[0] for call in run.call_args_list])
+        for repository in ({}, dict(UPSTREAM, full_name="fork/repo")):
+            with patch.object(release, "api", return_value=repository), \
+                    patch.object(release, "run") as run, self.assertRaises(ValueError):
+                release.plan(ENV)
+            run.assert_not_called()
+        with patch.object(release, "api") as api, self.assertRaises(ValueError):
+            release.plan(dict(ENV, GITHUB_REPOSITORY="fork/repo"))
+        api.assert_not_called()
+
+    def test_fetch_credentials_are_ephemeral_fixed_url_and_not_traced(self):
+        environment = {"GH_TOKEN": "fixture-token", "GITHUB_TOKEN": "other-fixture-token",
+                       "PATH": "/fixture/bin", "GIT_TRACE": "1", "GIT_TRACE_CURL": "1",
+                       "GIT_CONFIG_PARAMETERS": "inherited-config",
+                       "GIT_CONFIG_COUNT": "99", "GIT_CONFIG_KEY_98": "inherited-key",
+                       "GIT_CONFIG_VALUE_98": "inherited-secret"}
+        with patch.dict(os.environ, environment, clear=True), patch.object(release, "run") as run:
+            before = dict(os.environ)
+            release.fetch_source(TAG)
+            self.assertEqual(dict(os.environ), before)
+            release.run(["git", "status", "--porcelain"])
+            self.assertNotIn("env", run.call_args.kwargs)
+        fetch = run.call_args_list[0]
+        self.assertNotIn("fixture-token", " ".join(fetch.args[0]))
+        env = fetch.kwargs["env"]
+        settings = [(env[f"GIT_CONFIG_KEY_{n}"], env[f"GIT_CONFIG_VALUE_{n}"])
+                    for n in range(int(env["GIT_CONFIG_COUNT"]))]
+        header = f"http.https://github.com/{release.REPOSITORY}.git.extraheader"
+        self.assertEqual(settings[:2], [(header, ""), (header, "AUTHORIZATION: basic " +
+                         base64.b64encode(b"x-access-token:fixture-token").decode("ascii"))])
+        self.assertIn((f"http.https://github.com/{release.REPOSITORY}.git.followRedirects", "false"), settings)
+        self.assertIn((f"http.https://github.com/{release.REPOSITORY}.git.sslVerify", "true"), settings)
+        self.assertIn(("credential.helper", ""), settings)
+        self.assertIn((f"credential.https://github.com/{release.REPOSITORY}.git.helper", ""), settings)
+        self.assertIn(("fetch.recurseSubmodules", "false"), settings)
+        self.assertEqual(env["GIT_CONFIG_GLOBAL"], os.devnull)
+        self.assertEqual(env["GIT_CONFIG_NOSYSTEM"], "1")
+        self.assertEqual(env["GIT_TERMINAL_PROMPT"], "0")
+        for key in ("GH_TOKEN", "GITHUB_TOKEN", "GIT_TRACE", "GIT_TRACE_CURL",
+                    "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_KEY_98", "GIT_CONFIG_VALUE_98"):
+            self.assertNotIn(key, env)
+
+    def test_actual_git_url_settings_override_inherited_config_without_persistence(self):
+        with patch.dict(os.environ, {"GH_TOKEN": "fixture-token"}), patch.object(release, "run") as run:
+            release.fetch_source(TAG)
+        env = run.call_args.kwargs["env"]
+        url = f"https://github.com/{release.REPOSITORY}.git"
+        with tempfile.TemporaryDirectory() as temp:
+            config = Path(temp) / "config"
+            inherited = (f'[http "{url}"]\n followRedirects = true\n sslVerify = false\n extraheader = stale-header\n'
+                         f'[credential "{url}"]\n helper = stale-helper\n')
+            config.write_text(inherited)
+            # Model inherited URL-specific settings while exercising Git's real
+            # runtime config parser. There is no fetch, init or config write.
+            env["GIT_CONFIG_GLOBAL"] = str(config)
+            def setting(key, target=url):
+                return subprocess.run(["git", "config", "--get-urlmatch", key, target],
+                                      cwd=temp, env=env, capture_output=True, text=True)
+            self.assertEqual(setting("http.followRedirects").stdout.strip(), "false")
+            self.assertEqual(setting("http.sslVerify").stdout.strip(), "true")
+            self.assertEqual(setting("credential.helper").stdout.strip(), "")
+            self.assertEqual(setting("credential.helper").returncode, 0)
+            self.assertEqual(setting("http.extraheader").stdout.splitlines(), [
+                             "AUTHORIZATION: basic " + base64.b64encode(b"x-access-token:fixture-token").decode("ascii")])
+            for other in ("https://github.com/another/repo.git", "https://evil.example/repo.git",
+                          url + "-other"):
+                self.assertEqual(setting("http.extraheader", other).returncode, 1)
+            self.assertEqual(config.read_text(), inherited)
+
+    def test_fetch_failures_never_persist_credentials(self):
+        for token in (None, "", "bad\ntoken", "bad token", "nonascii-\u00e9"):
+            with patch.dict(os.environ, {} if token is None else {"GH_TOKEN": token}, clear=True), \
+                    patch.object(release, "run") as run, self.assertRaises(ValueError):
+                release.fetch_source(TAG)
+            run.assert_not_called()
+        with patch.dict(os.environ, {"GH_TOKEN": "fixture-token"}, clear=True), \
+                patch.object(release, "run", side_effect=subprocess.CalledProcessError(1, "git")) as run:
+            before = dict(os.environ)
+            with self.assertRaises(subprocess.CalledProcessError):
+                release.fetch_source(TAG)
+            self.assertEqual(dict(os.environ), before)
+            self.assertEqual(run.call_count, 1)
+        with patch.object(release, "run") as run, self.assertRaises(ValueError):
+            release.fetch_source("bad")
+        run.assert_not_called()
 
     def test_builds_six_targets_without_token_and_stable_checksums(self):
         with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ, {}, clear=True):

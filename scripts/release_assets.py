@@ -1,5 +1,6 @@
 """Trusted-main release tooling: plan, build immutable source, publish without replacement."""
 import argparse
+import base64
 import datetime
 import hashlib
 import json
@@ -45,18 +46,45 @@ def run(arguments, cwd=None, env=None):
     return subprocess.run(arguments, cwd=cwd, env=env, check=True, capture_output=True, text=True).stdout.strip()
 
 
+def fetch_source(tag):
+    tag_valid(tag)
+    token = os.environ.get("GH_TOKEN", "")
+    if not re.fullmatch(r"[!-~]+", token):
+        raise ValueError("release planning requires an authenticated token")
+    url = f"https://github.com/{REPOSITORY}.git"
+    authorization = base64.b64encode(("x-access-token:" + token).encode("ascii")).decode("ascii")
+    # Credentials exist only in this child's environment, never argv/config.
+    # Ignore inherited tracing/config overrides and prevent credential redirects.
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith("GIT_") and key not in ("GH_TOKEN", "GITHUB_TOKEN")}
+    settings = [(f"http.{url}.extraheader", ""),
+                (f"http.{url}.extraheader", "AUTHORIZATION: basic " + authorization),
+                (f"http.{url}.followRedirects", "false"), (f"http.{url}.sslVerify", "true"),
+                ("credential.helper", ""), (f"credential.{url}.helper", ""),
+                ("fetch.recurseSubmodules", "false")]
+    env.update(GIT_CONFIG_COUNT=str(len(settings)), GIT_CONFIG_NOSYSTEM="1",
+               GIT_CONFIG_GLOBAL=os.devnull, GIT_TERMINAL_PROMPT="0")
+    for index, (key, value) in enumerate(settings):
+        env[f"GIT_CONFIG_KEY_{index}"] = key
+        env[f"GIT_CONFIG_VALUE_{index}"] = value
+    run(["git", "fetch", "--no-tags", url, "refs/heads/main:refs/remotes/origin/main",
+         f"refs/tags/{tag}:refs/tags/{tag}"], env=env)
+
+
 def stable_release(release):
     tag = tag_valid(release.get("tag_name"))
     if release.get("draft") is not False or release.get("prerelease") is not False or type(release.get("id")) is not int or release["id"] <= 0:
-        raise ValueError("an existing public stable release is required")
+        raise ValueError("an existing published stable release is required")
     if release.get("html_url") != f"https://github.com/{REPOSITORY}/releases/tag/{tag}":
         raise ValueError("release repository mismatch")
     return tag
 
 
 def plan(environment):
-    if environment.get("GITHUB_REPOSITORY") != REPOSITORY or api("").get("private") is not False:
-        raise ValueError("publishing is restricted to the public upstream repository")
+    if environment.get("GITHUB_REPOSITORY") != REPOSITORY:
+        raise ValueError("publishing is restricted to the upstream repository")
+    if api("").get("full_name") != REPOSITORY:
+        raise ValueError("authenticated repository identity mismatch")
     event = environment.get("EVENT_NAME")
     if event == "workflow_dispatch" and environment.get("GITHUB_REF") == "refs/heads/main":
         tag = environment.get("INPUT_TAG", "")
@@ -71,8 +99,7 @@ def plan(environment):
         raise ValueError("release tag mismatch")
     if run(["git", "status", "--porcelain"]):
         raise ValueError("trusted tooling checkout must be clean")
-    run(["git", "fetch", "--no-tags", "origin", "refs/heads/main:refs/remotes/origin/main",
-         f"refs/tags/{resolved}:refs/tags/{resolved}"])
+    fetch_source(resolved)
     commit = run(["git", "rev-parse", "--verify", f"refs/tags/{resolved}^{{commit}}"])
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("invalid commit identity")

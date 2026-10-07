@@ -26,4 +26,4 @@ jobs:
       packages: read
     secrets: inherit
     with:
-      new_version_title: ""
+      new_version_title: "🎛️ Jev Go"

@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -117,7 +118,7 @@ func TestMCPChildPreparedACKIndependentLifeAndAuthenticatedStop(t *testing.T) {
 	_ = output.Close()
 	waitChildPhase(t, controller, "running")
 	state, key, err := daemon.Read(store)
-	if err != nil || state.Address != boot.Address || state.Instance != boot.Instance || key != boot.ControlToken {
+	if err != nil || state.Address != boot.Address || state.Instance != boot.Instance || key != boot.ControlToken || state.Schema != 2 || state.PID != os.Getpid() {
 		t.Fatal("published state changed", err)
 	}
 	// Parent pipe is gone and the short operation timeout does not own server life.

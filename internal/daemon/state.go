@@ -22,12 +22,14 @@ type stateError struct{ cause error }
 func (e *stateError) Error() string { return "cannot access verified MCP instance state" }
 func (e *stateError) Unwrap() error { return e.cause }
 
-// State contains only public metadata. It never includes process IDs or credentials.
+// State contains only public metadata, never credentials.
+// PID is inspection-only, not proof of process ownership or liveness.
 type State struct {
 	Schema   int    `json:"schema"`
 	Address  string `json:"address"`
 	Version  string `json:"version"`
 	Instance string `json:"instance"`
+	PID      int    `json:"pid,omitempty"`
 }
 
 func metadataID(value string, min, max int) bool {
@@ -45,7 +47,8 @@ func metadataID(value string, min, max int) bool {
 func (s State) validate() error {
 	address, err := mcpserver.ValidateAddress(s.Address)
 	_, versionErr := update.Compare(s.Version, s.Version)
-	if s.Schema != 1 || err != nil || address != s.Address || !metadataID(s.Instance, 16, 128) || len(s.Version) > 128 || (s.Version != "dev" && versionErr != nil) {
+	schemaValid := (s.Schema == 1 && s.PID == 0) || (s.Schema == 2 && s.PID > 0 && uint64(s.PID) <= 1<<32-1)
+	if !schemaValid || err != nil || address != s.Address || !metadataID(s.Instance, 16, 128) || len(s.Version) > 128 || (s.Version != "dev" && versionErr != nil) {
 		return errors.New("invalid instance metadata")
 	}
 	return nil
@@ -101,6 +104,8 @@ func decodeState(data []byte) (State, error) {
 			target = &state.Version
 		case "instance":
 			target = &state.Instance
+		case "pid":
+			target = &state.PID
 		default:
 			return fail()
 		}
@@ -108,7 +113,11 @@ func decodeState(data []byte) (State, error) {
 			return fail()
 		}
 	}
-	if token, err := d.Token(); err != nil || token != json.Delim('}') || len(seen) != 4 {
+	expectedFields := 4
+	if state.Schema == 2 {
+		expectedFields = 5
+	}
+	if token, err := d.Token(); err != nil || token != json.Delim('}') || len(seen) != expectedFields || seen["pid"] != (state.Schema == 2) {
 		return fail()
 	}
 	if _, err := d.Token(); err != io.EOF || state.validate() != nil {

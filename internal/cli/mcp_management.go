@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/bitbrew-dev/jevwise/internal/daemon"
 	"github.com/spf13/cobra"
@@ -62,7 +63,11 @@ func newMCPManagement(action string, runtimeDir *string) *cobra.Command {
 		if action == "stop" {
 			return writeMCPManagement(cmd, "MCP background stop acknowledged", true)
 		}
-		return writeMCPManagement(cmd, "MCP background instance is "+status.State, false)
+		message := "MCP background instance is " + status.State
+		if state.PID > 0 {
+			message += "\nPID: " + strconv.Itoa(state.PID) + " (inspection only)"
+		}
+		return writeMCPManagement(cmd, message, false)
 	}
 	return cmd
 }

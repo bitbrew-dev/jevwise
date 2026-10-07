@@ -105,6 +105,18 @@ See [Claude Code's official MCP documentation](https://code.claude.com/docs/en/m
 
 If you intentionally want a decision, supply a `prompt` and at least two distinct `options`. Keep tool approval enabled and review the call before sending it.
 
+### Optional installed-client smoke test (unreleased checkout)
+
+From the source checkout, with both `codex` and `claude` installed on PATH, run in a macOS/Linux shell:
+
+```sh
+JEVWISE_MCP_AGENT_SMOKE=1 go test -mod=readonly -run '^TestRealAgentMCPDiscovery$' -count=1 -v ./internal/mcpserver
+```
+
+- Checks Codex tool discovery and Claude Code connection health against the production MCP HTTP handler with a synthetic service. It asserts zero tool calls, decisions and model-backend requests; no model prompts/turns are started.
+- Uses temporary client homes/settings and a scrubbed environment, with Codex file-only credential storage and Claude bare mode. It does not register servers in your normal client configuration. Managed host policies still apply; this is not an OS sandbox.
+- Normal test runs skip these probes. Explicit opt-in fails when either client is missing, incompatible or cannot connect; a successful command exit alone is not treated as proof of connectivity. Verified on macOS with Codex 0.160.1 and Claude Code 2.1.292.
+
 ## Troubleshooting and cleanup
 
 | Symptom | Check |

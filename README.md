@@ -204,12 +204,19 @@ go build ./...
 Tests use injected services/transports and local HTTP fixtures, not paid API requests.
 
 - Compatibility is pinned to Python SDK v0.7.2, revision `f078f1e208a0d885154dc758344ae4fce77ac168`.
-- [Compatibility notes](docs/internal/compatibility.md) describe Go-specific validation, ownership, decoding, and retry differences.
 - Release/update QA uses injected HTTP responses and temporary executables, never overwriting the developer's running CLI or publishing a release.
 
-## Local MCP (unreleased, after v1.0.0)
+## Local MCP
 
-MCP features are not included in v1.0.0. The examples below describe the unreleased checkout, using synthetic paths and addresses. They are not services started by this documentation.
+MCP is included in v1.1.0. Diagnostic PID tracking is a newer, unreleased addition in the current checkout.
+
+| Capability | v1.0.0 | v1.1.0 | Current checkout |
+| --- | --- | --- | --- |
+| Foreground and background MCP | Not included | Included | Included |
+| Authenticated status and stop | Not included | Included | Included |
+| Recorded child PID and schema-2 state | Not included | Not included | Included, unreleased |
+
+The examples below describe the current checkout, using synthetic paths and addresses. They are not services started by this documentation.
 
 ### Start and manage
 
@@ -227,7 +234,7 @@ bin/jev mcp stop
 | --- | --- |
 | `jev mcp` | Foreground server; prints the public `/mcp` endpoint after startup. Ctrl+C stops it. |
 | `--background` | Starts a terminal-independent child after authenticated readiness and ownership checks. |
-| `jev mcp status` | Authenticates the exact instance and reports its startup/running state, plus its recorded PID when available. |
+| `jev mcp status` | Authenticates the exact instance and reports its startup/running state. The post-v1.1.0 checkout also shows the recorded PID when available. |
 | `jev mcp stop` | Authenticates the exact instance and requests shutdown; an acknowledgement is not a promise that cleanup has already finished. |
 | `--listen` | Literal loopback IP and nonzero port; default `127.0.0.1:8080`. |
 | `--runtime-dir` | Private background state directory; default `os.UserCacheDir()/jevwise-mcp`. Use the same override for start, status and stop. |
@@ -239,8 +246,8 @@ bin/jev mcp stop
 - Background mode does not install a login item, reboot service or automatic restart. On Windows, a restrictive parent Job Object can prevent detachment or terminate the child when its parent exits.
 - A repeated background start returns an endpoint only for an authenticated running instance. If it is still preparing or stopping, wait and check status instead.
 - Stop and restart after changing credentials, decision configuration or the executable. Updating a binary does not change an already-running process.
-- Background children save their own PID in private `<runtime-dir>/state.json`; authenticated status prints `PID: NUMBER (inspection only)`. Normal owned shutdown removes that state along with the key and lease. PID reuse means this number is not proof of ownership or liveness: use `jev mcp stop`, not a blind PID-based kill.
-- New children write schema-2 state. The updated CLI still manages schema-1 instances without displaying a PID; older CLIs cannot read schema-2 state. Stop an old instance before upgrading/restarting, and use the matching or newer CLI to manage a new child.
+- Unreleased PID support (post-v1.1.0 checkout): background children save their own PID in private `<runtime-dir>/state.json`; authenticated status prints `PID: NUMBER (inspection only)`. Normal owned shutdown removes that state along with the key and lease. PID reuse means this number is not proof of ownership or liveness: use `jev mcp stop`, not a blind PID-based kill.
+- Unreleased state format: updated children write schema-2 state. The updated CLI still manages schema-1 instances without displaying a PID; older CLIs, including v1.1.0, cannot read schema-2 state. Stop an old instance before upgrading/restarting, and use the matching or newer CLI to manage a new child.
 
 ### Agent connection and limits
 
@@ -261,7 +268,7 @@ Connect an HTTP-capable local agent to `http://127.0.0.1:8080/mcp`, supplying `A
 | Agent bearer token | Agent-to-local `/mcp` access | `JEV_MCP_TOKEN` or an explicit protected token file. |
 | Management key | Status/stop and instance verification | Separate private runtime file; never give it to the agent or transmit it as a bearer token. |
 
-- Background bootstrap passes secrets through owned anonymous pipes, not child arguments, public state or logs. State contains bounded instance metadata and an inspection-only PID, never credentials. Agent and API credentials must differ; the management key is separately generated.
+- Background bootstrap passes secrets through owned anonymous pipes, not child arguments, public state or logs. State contains bounded instance metadata, never credentials; the post-v1.1.0 checkout also records an inspection-only PID. Agent and API credentials must differ; the management key is separately generated.
 - Management requests and responses use nonce-bound HMAC proofs for the exact instance, method and path. The private control key itself is never transmitted. Status/stop do not trust PIDs, signal unrelated processes or follow HTTP redirects/proxies.
 - Fresh nonces prevent accepting replayed responses. Signed requests are not replay-cached; stop is idempotent and bound to the exact instance.
 - Child stdout/stderr are discarded, with no retained output logs. Diagnostics are bounded, fixed safe messages through authenticated status/startup handling; prompts and arbitrary backend errors are not logged.

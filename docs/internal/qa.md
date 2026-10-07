@@ -342,3 +342,11 @@
 
 - Independent source review and repeated/race QA passed. Root full tests, race, vet/build/tidy, formatting, fixtures and six cross-builds passed on the reviewed parent. Native Linux/macOS/Windows exact-head CI is required before merge; hard cap respected.
 - Documentation matches the integrated CLI and security boundaries. Synthetic process fixtures cover independent lifetime, duplicate start, authenticated stop and conservative failure cleanup. Task-owned artifacts are removed only after final merged gates pass; published v1.0.0 stays unchanged. No paid calls, user daemon or release changes.
+
+## Private release assets 20
+
+- Parent: `213e524`; branch: `feature/20-private-release-assets`; changed lines: 167 including source, tests, public docs and this ledger; below the 300-line soft cap.
+- Independent review and all 10 offline release fixtures passed. Actual Git config parsing verifies exact-URL TLS, redirect and helper overrides, header isolation and no persistence; API/fetch/build operations are mocked.
+- Root fresh tests/race, tidy-diff, vet/build, six Linux/macOS/Windows cross-builds, source hashes, workflow syntax and whitespace checks passed. Five native/pre-commit/labeler exact-head checks are required before merge.
+- Authenticated upstream identity permits either visibility; fixed-URL planning fetch uses temporary child-only credentials. Builds remain token-free; immutable tags, ancestry, checksums and no-overwrite publication protections remain intact.
+- No visibility changes, release dispatch, tag changes or real asset uploads. Private spec stays untouched; anonymous CLI updates remain public-only and private installation is documented as manual.

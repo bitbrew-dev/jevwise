@@ -72,6 +72,10 @@ bin/jev update --timeout 60s # Install on supported standalone Linux/macOS build
 
 The release-assets workflow attaches raw CLI binaries and `SHA256SUMS` to an existing stable [GitHub release](https://github.com/bitbrew-dev/jevwise/releases). It does not create versions or releases.
 
+- Publishing supports the upstream repository whether public or private. Actions authenticates planning and upload; source-fetch credentials are temporary and never persisted or passed to builds.
+- CLI release checks and self-update remain anonymous/public-only. For private releases, download assets through authenticated GitHub access and install manually.
+- To retry asset publication without creating another release, run the release-assets workflow on `main` with the existing release tag. Existing assets are never overwritten or automatically resumed.
+
 | Platform | Architectures | Asset pattern |
 | --- | --- | --- |
 | Linux | amd64, arm64 | `jev_vX.Y.Z_linux_ARCH` |

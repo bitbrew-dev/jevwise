@@ -11,6 +11,7 @@ import (
 	"runtime/debug"
 
 	"github.com/bitbrew-dev/jevwise/internal/buildinfo"
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 )
 
 type guardError struct{ cause error }
@@ -68,7 +69,9 @@ func readInstalled(ctx context.Context, reader io.ReaderAt, size int64, current,
 }
 
 // validateBinary rechecks the opaque download before any filesystem publication.
-func validateBinary(ctx context.Context, binary *Binary, current, goos, goarch string) error {
+func validateBinary(ctx context.Context, binary *Binary, current, goos, goarch string) (resultErr error) {
+	finish := debuglog.Trace(ctx, "update.verify")
+	defer func() { finish(resultErr) }()
 	if ctx == nil || binary == nil || len(binary.data) == 0 || len(binary.data) > binaryLimit {
 		return guardFailure(ctx, errors.New("invalid verified binary"))
 	}

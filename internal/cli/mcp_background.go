@@ -11,6 +11,7 @@ import (
 	"github.com/bitbrew-dev/jevwise/internal/buildinfo"
 	"github.com/bitbrew-dev/jevwise/internal/config"
 	"github.com/bitbrew-dev/jevwise/internal/daemon"
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/bitbrew-dev/jevwise/internal/mcpserver"
 	"github.com/bitbrew-dev/jevwise/internal/service"
 	"github.com/spf13/cobra"
@@ -40,6 +41,7 @@ func runMCPBackground(cmd *cobra.Command, cfg config.Config, address, agentToken
 	if err := daemon.ValidateBootstrap(boot); err != nil {
 		return err
 	}
+	debuglog.Event(cmd.Context(), "mcp.background.inspect")
 	state, token, err := readBackgroundInstance(path)
 	if err == nil {
 		controller, err := daemon.NewController(state.Address, state.Instance, token)

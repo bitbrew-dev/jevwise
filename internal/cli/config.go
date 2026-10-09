@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/bitbrew-dev/jevwise/internal/config"
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/spf13/cobra"
 )
 
@@ -52,6 +53,7 @@ func newConfig() *cobra.Command {
 			if err != nil {
 				return errors.New("cannot determine configuration path")
 			}
+			debuglog.Event(cmd.Context(), "config.init.publish")
 			if err := config.Init(cmd.Context(), path); err != nil {
 				if errors.Is(err, os.ErrExist) {
 					return errors.New("configuration already exists; no file replaced")
@@ -78,6 +80,7 @@ func newConfig() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			debuglog.Event(cmd.Context(), "config.view.read")
 			text, err := config.View(path)
 			if err != nil {
 				return err

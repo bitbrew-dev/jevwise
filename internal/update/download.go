@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 )
 
 const binaryLimit = 64 << 20
@@ -30,7 +32,9 @@ func (e *downloadError) Unwrap() error { return e.cause }
 
 // Download verifies one exact platform artifact against the release's SHA256SUMS.
 // The caller context controls the total deadline; no files are written.
-func (c *Client) Download(ctx context.Context, release Release, goos, goarch string) (*Binary, error) {
+func (c *Client) Download(ctx context.Context, release Release, goos, goarch string) (_ *Binary, resultErr error) {
+	finish := debuglog.Trace(ctx, "update.download")
+	defer func() { finish(resultErr) }()
 	fail := func(err error) (*Binary, error) {
 		if ctx != nil && ctx.Err() != nil {
 			err = ctx.Err()
@@ -63,6 +67,7 @@ func (c *Client) Download(ctx context.Context, release Release, goos, goarch str
 		}
 	}
 	if !primaryPresent {
+		debuglog.Event(ctx, "update.asset.legacy")
 		name = "jev_" + strings.TrimPrefix(name, "jevwise_")
 	}
 	sizes := make(map[string]int64, 2)
@@ -101,10 +106,13 @@ func (c *Client) Download(ctx context.Context, release Release, goos, goarch str
 	if err := ctx.Err(); err != nil {
 		return fail(err)
 	}
+	debuglog.Event(ctx, "update.checksum.verified")
 	return &Binary{data: data, digest: digest, tag: release.Tag, goos: goos, goarch: goarch}, nil
 }
 
-func (c *Client) readAsset(ctx context.Context, original string, size int64) ([]byte, error) {
+func (c *Client) readAsset(ctx context.Context, original string, size int64) (_ []byte, resultErr error) {
+	finish := debuglog.Trace(ctx, "update.asset")
+	defer func() { finish(resultErr) }()
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

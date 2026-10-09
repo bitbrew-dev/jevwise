@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 )
 
 // ChildArgument is the fixed hidden command. Credentials never appear in argv.
@@ -26,7 +28,9 @@ type StartResult struct{ Started bool }
 // boot.ControlToken; running=false checks preparation, true checks ACK promotion.
 // Readiness must honor its bounded context. Acknowledged children are never
 // killed when this context expires.
-func Start(ctx context.Context, executable string, boot Bootstrap, validate func(Bootstrap) error, readiness func(context.Context, bool) error) (StartResult, error) {
+func Start(ctx context.Context, executable string, boot Bootstrap, validate func(Bootstrap) error, readiness func(context.Context, bool) error) (_ StartResult, resultErr error) {
+	finish := debuglog.Trace(ctx, "mcp.background.start")
+	defer func() { finish(resultErr) }()
 	fail := errors.New("background startup failed: inspect authenticated status")
 	if ctx == nil || readiness == nil {
 		return StartResult{}, fail
@@ -95,9 +99,11 @@ func Start(ctx context.Context, executable string, boot Bootstrap, validate func
 	if n, err := output.Write(frame.Bytes()); err != nil || n != frame.Len() {
 		return StartResult{}, fail
 	}
+	debuglog.Event(ctx, "mcp.background.wait.prepared")
 	if waitReady(startup, done, readiness, false) != nil {
 		return StartResult{}, fail
 	}
+	debuglog.Event(ctx, "mcp.background.acknowledge")
 	n, err := output.Write([]byte{acknowledgement})
 	acknowledged = n == 1
 	_ = output.Close()

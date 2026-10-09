@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 )
 
 // Responses are bounded to 8 MiB, including error bodies, to prevent unbounded
@@ -23,7 +25,9 @@ const sdkIdentity = "typesafe-sdk-go/dev"
 
 // sendOnce executes one attempt. A zero timeout uses the client default. The
 // enclosing retry loop is responsible for incrementing the zero-based attempt.
-func (c *Client) sendOnce(ctx context.Context, method, path string, body []byte, timeout time.Duration, headers http.Header, attempt int) (*RawResponse, error) {
+func (c *Client) sendOnce(ctx context.Context, method, path string, body []byte, timeout time.Duration, headers http.Header, attempt int) (_ *RawResponse, resultErr error) {
+	finish := debuglog.Trace(ctx, "api.request")
+	defer func() { finish(resultErr) }()
 	if err := ctx.Err(); err != nil {
 		return nil, transportError(ctx, method, c.redact(c.baseURL+path), err)
 	}
@@ -70,6 +74,7 @@ func (c *Client) sendOnce(ctx context.Context, method, path string, body []byte,
 	if err != nil {
 		return nil, transportError(ctx, method, c.redact(endpoint), err)
 	}
+	debuglog.Count(ctx, "api.response.status", response.StatusCode)
 	payload, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBytes+1))
 	if err != nil {
 		return nil, transportError(ctx, method, c.redact(endpoint), err)

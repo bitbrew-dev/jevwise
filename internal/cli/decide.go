@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/bitbrew-dev/jevwise/internal/config"
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/bitbrew-dev/jevwise/internal/service"
 	"github.com/bitbrew-dev/jevwise/pkg/typesafe"
 	"github.com/spf13/cobra"
@@ -98,6 +99,7 @@ func newDecide(factory ServiceFactory) *cobra.Command {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
+			debuglog.Event(ctx, "decision.service.initialize")
 			svc, cleanup, err := factory(cfg)
 			if cleanup != nil {
 				defer cleanup()
@@ -111,6 +113,7 @@ func newDecide(factory ServiceFactory) *cobra.Command {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
+			debuglog.Event(ctx, "decision.dispatch")
 			response, err := svc.Decide(ctx, request)
 			if err != nil {
 				return &decisionError{"decision request failed", err}
@@ -118,6 +121,7 @@ func newDecide(factory ServiceFactory) *cobra.Command {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
+			debuglog.Event(ctx, "decision.output")
 			if err := json.NewEncoder(cmd.OutOrStdout()).Encode(response); err != nil {
 				return &decisionError{"cannot write decision response", err}
 			}

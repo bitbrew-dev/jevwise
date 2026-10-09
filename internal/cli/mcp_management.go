@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/bitbrew-dev/jevwise/internal/daemon"
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/spf13/cobra"
 )
 
@@ -30,6 +31,7 @@ func newMCPManagement(action string, runtimeDir *string) *cobra.Command {
 		if err != nil || *runtimeDir == "" {
 			return errors.New("invalid MCP runtime directory")
 		}
+		debuglog.Event(cmd.Context(), "mcp.management.inspect")
 		store, err := daemon.OpenExistingStore(filepath.Clean(path))
 		if errors.Is(err, os.ErrNotExist) {
 			return writeMCPManagement(cmd, "MCP background instance is not running", false)

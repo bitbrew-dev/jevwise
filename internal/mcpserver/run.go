@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/bitbrew-dev/jevwise/internal/service"
 )
 
@@ -49,7 +50,9 @@ func Run(ctx context.Context, svc service.DecisionService, timeout time.Duration
 // Its actual bound address is authoritative; options.Address is only for Run.
 // A prepared listener supports private daemon startup leases and isolated tests.
 // Normal lifetime cancellation is a successful, bounded graceful shutdown.
-func Serve(ctx context.Context, listener net.Listener, svc service.DecisionService, timeout time.Duration, options RunOptions) error {
+func Serve(ctx context.Context, listener net.Listener, svc service.DecisionService, timeout time.Duration, options RunOptions) (resultErr error) {
+	finish := debuglog.Trace(ctx, "mcp.serve")
+	defer func() { finish(resultErr) }()
 	if listener == nil {
 		return errors.New("MCP listener is required")
 	}
@@ -97,6 +100,7 @@ func Serve(ctx context.Context, listener net.Listener, svc service.DecisionServi
 		<-served
 		return err
 	}
+	debuglog.Event(lifetime, "mcp.ready")
 	if options.Ready != nil {
 		if err := options.Ready(lifetime, "http://"+listener.Addr().String()+"/mcp"); err != nil {
 			cancel()
@@ -114,6 +118,7 @@ func Serve(ctx context.Context, listener net.Listener, svc service.DecisionServi
 	}
 	// Cancellation reaches active decisions before the bounded connection drain.
 	cancel()
+	debuglog.Event(lifetime, "mcp.shutdown")
 	shutdown, stop := context.WithTimeout(context.Background(), 5*time.Second)
 	defer stop()
 	err = httpServer.Shutdown(shutdown)

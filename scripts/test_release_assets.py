@@ -42,7 +42,12 @@ class ReleaseFixtures(unittest.TestCase):
                 release.tag_valid(tag)
         names = release.asset_names(TAG)
         self.assertEqual(len(set(names)), 6)
-        self.assertEqual(names[-2:], ["jev_v1.2.3_windows_amd64.exe", "jev_v1.2.3_windows_arm64.exe"])
+        self.assertEqual(names, [f"jevwise_{TAG}_{system}_{arch}" + (".exe" if system == "windows" else "")
+                                 for system, arch in release.PLATFORMS])
+        for tag in sorted(release.LEGACY_TAGS):
+            self.assertEqual(release.asset_names(tag), [f"jev_{tag}_{system}_{arch}" + (".exe" if system == "windows" else "")
+                                                       for system, arch in release.PLATFORMS])
+        self.assertEqual(names[-2:], ["jevwise_v1.2.3_windows_amd64.exe", "jevwise_v1.2.3_windows_arm64.exe"])
 
     @patch.dict(os.environ, {"GH_TOKEN": "fixture-token"})
     @patch.object(release, "run", side_effect=["", "", COMMIT, "", "1791331200"])
@@ -190,7 +195,15 @@ class ReleaseFixtures(unittest.TestCase):
             self.assertEqual(sum(call.args[0][:2] == ["go", "build"] for call in run.call_args_list), 6)
             manifest = (directory / "SHA256SUMS").read_text()
             self.assertEqual(manifest, release.checksums(directory, release.asset_names(TAG)))
+            self.assertEqual(set(path.name for path in directory.iterdir()), set(release.asset_names(TAG)) | {"SHA256SUMS"})
             self.assertEqual(manifest.splitlines(), sorted(manifest.splitlines(), key=lambda line: line.split("  ")[1]))
+            def wrong_identity(arguments, cwd=None, env=None):
+                if arguments[0].endswith("darwin_arm64"):
+                    return f"jev {TAG}\ncommit: {COMMIT}\n"
+                return build_run(arguments, cwd, env)
+            with patch.object(release, "run", side_effect=wrong_identity), self.assertRaises(ValueError):
+                release.build(META, Path(temp), Path(temp) / "wrong-name")
+            self.assertFalse((Path(temp) / "wrong-name" / "SHA256SUMS").exists())
             with patch.dict(os.environ, {"GH_TOKEN": "secret"}), patch.object(release, "run", side_effect=[COMMIT, ""]), self.assertRaises(ValueError):
                 release.build(META, Path(temp), Path(temp) / "blocked")
 
@@ -209,7 +222,10 @@ class ReleaseFixtures(unittest.TestCase):
                         return ""
                     return f"jev {tag}\ncommit: {COMMIT}\n"
                 with patch.object(release, "run", side_effect=build_run):
-                    release.build(dict(META, tag=tag), Path(temp), Path(temp) / "assets")
+                    directory = Path(temp) / "assets"
+                    release.build(dict(META, tag=tag), Path(temp), directory)
+                self.assertEqual(set(path.name for path in directory.iterdir()), set(release.asset_names(tag)) | {"SHA256SUMS"})
+                self.assertEqual((directory / "SHA256SUMS").read_text(), release.checksums(directory, release.asset_names(tag)))
 
     def test_publication_preflight_identity_pagination_and_manifest_last(self):
         with tempfile.TemporaryDirectory() as temp:

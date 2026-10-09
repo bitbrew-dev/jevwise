@@ -80,11 +80,14 @@ The release-assets workflow attaches raw CLI binaries and `SHA256SUMS` to an exi
 
 | Platform | Architectures | Asset pattern |
 | --- | --- | --- |
-| Linux | amd64, arm64 | `jev_vX.Y.Z_linux_ARCH` |
-| macOS | amd64, arm64 | `jev_vX.Y.Z_darwin_ARCH` |
-| Windows | amd64, arm64 | `jev_vX.Y.Z_windows_ARCH.exe` |
+| Linux | amd64, arm64 | `jevwise_vX.Y.Z_linux_ARCH` |
+| macOS | amd64, arm64 | `jevwise_vX.Y.Z_darwin_ARCH` |
+| Windows | amd64, arm64 | `jevwise_vX.Y.Z_windows_ARCH.exe` |
 
-- Download the exact OS/architecture asset. Unix users must make a downloaded binary executable; Windows users run the `.exe` directly.
+- Future releases use the patterns above; existing v1.0.0, v1.1.0 and v1.2.0 keep their legacy `jev_...` names and are not rewritten.
+- Download the exact OS/architecture asset. Install it as `jevwise` (`jevwise.exe` on Windows); Unix users must make it executable. Verify `jevwise version` before use.
+- For the first renamed release, install manually: older `jev` clients cannot find `jevwise_...` assets. Confirm binary ownership before removing an old copy; never remove another project's `jev`. Regenerate shell completions with `jevwise completion SHELL` and review saved scripts or agent commands.
+- The new updater prefers `jevwise_...`, using `jev_...` only when the new exact platform name is absent from release metadata, never after a verification/download failure. It replaces its current executable path without renaming that path or installing a legacy alias.
 - `SHA256SUMS` hashes the exact raw binary bytes. Verify the hash before use. Checksums detect corruption, not a compromised publisher; trust remains the repository and GitHub/TLS.
 - The internal update downloader verifies exact platform asset names, metadata sizes and SHA-256 before returning bytes. Binary/manifest limits are 64 MiB/64 KiB; downloads use fixed release URLs and bounded HTTPS redirects to allowlisted GitHub hosts, without credentials or cookies.
 - Release/Make builds embed a passive update stamp that survives stripping and path trimming. Version guards inspect Go module/platform metadata, recheck the candidate checksum, and reject equal/older or mismatched on-disk versions without executing binaries. Stamps are self-declared metadata, not signatures.

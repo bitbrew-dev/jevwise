@@ -2,7 +2,7 @@
 
 Use Codex or Claude Code on the **same computer** as the Jevwise MCP server. Jevwise serves Streamable HTTP at a literal-loopback `/mcp` endpoint, not stdio or legacy `/sse`. Do not register `jevwise mcp` as a stdio command or expose it through a public tunnel.
 
-MCP is available in v1.1.0. Recorded PID/schema-2 state requires v1.2.0 or newer; see [release availability](../README.md#local-mcp).
+MCP is available in v1.1.0. Recorded PID/schema-2 state requires v1.2.0 or newer; see [release availability](mcp.md).
 
 The commands below use the renamed checkout CLI, `jevwise`; published releases through v1.2.0 use `jev`.
 
@@ -10,8 +10,8 @@ The commands below use the renamed checkout CLI, `jevwise`; published releases t
 
 Prerequisites:
 
-- Install/build `jevwise` and configure the Jev provider as in the [README](../README.md#build-and-run).
-- Prepare a random, separate agent bearer token in a protected current-user-only file. Follow the [token and runtime permissions](../README.md#credentials-state-and-safety), including Windows ACL requirements.
+- Install/build `jevwise` and configure the Jev provider using the [installation guide](../README.md#installation) and [configuration guide](configuration.md).
+- Prepare a random, separate agent bearer token in a protected current-user-only file. Follow the [token and runtime permissions](mcp.md#credentials-state-and-safety), including Windows ACL requirements.
 - Replace the example token-file path below with your own existing protected file. Do not reuse your upstream API key or the runtime management key.
 
 ```sh

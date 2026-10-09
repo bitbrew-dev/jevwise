@@ -74,7 +74,7 @@ func newUpdate(ops updateOps, current string) *cobra.Command {
 			if errors.Is(err, update.ErrNoRelease) {
 				output = "No stable Jevwise release is published yet.\n"
 			} else if err != nil {
-				return &decisionError{"cannot check Jevwise releases", err}
+				return &decisionError{update.LookupMessage(err), err}
 			} else {
 				if _, err := update.Compare(release.Tag, release.Tag); err != nil {
 					return &decisionError{"invalid latest release version", err}

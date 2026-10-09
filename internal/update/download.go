@@ -79,11 +79,13 @@ func (c *Client) Download(ctx context.Context, release Release, goos, goarch str
 			continue
 		}
 		if _, exists := sizes[asset.Name]; exists || asset.Size <= 0 || asset.Size > limit {
+			debuglog.Event(ctx, "update.download.failed.asset_metadata")
 			return fail(errors.New("invalid or duplicate release asset"))
 		}
 		sizes[asset.Name] = asset.Size
 	}
 	if len(sizes) != 2 {
+		debuglog.Event(ctx, "update.download.failed.missing_assets")
 		return fail(errors.New("required release assets missing"))
 	}
 	base := "https://github.com/bitbrew-dev/jevwise/releases/download/" + release.Tag + "/"
@@ -93,6 +95,7 @@ func (c *Client) Download(ctx context.Context, release Release, goos, goarch str
 	}
 	digest, err := manifestDigest(manifest, name)
 	if err != nil {
+		debuglog.Event(ctx, "update.download.failed.manifest")
 		return fail(err)
 	}
 	data, err := c.readAsset(ctx, base+name, sizes[name])
@@ -101,6 +104,7 @@ func (c *Client) Download(ctx context.Context, release Release, goos, goarch str
 	}
 	actual := sha256.Sum256(data)
 	if subtle.ConstantTimeCompare(actual[:], digest[:]) != 1 {
+		debuglog.Event(ctx, "update.download.failed.checksum")
 		return fail(errors.New("release checksum mismatch"))
 	}
 	if err := ctx.Err(); err != nil {
@@ -120,7 +124,7 @@ func (c *Client) readAsset(ctx context.Context, original string, size int64) (_ 
 	client.Jar = nil
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		if len(via) > 5 || !assetURLAllowed(req.URL, original) {
-			return errors.New("release redirect refused")
+			return errRedirectRefused
 		}
 		// Do not forward credentials or leak a signed storage query via Referer.
 		req.Header.Del("Authorization")
@@ -135,13 +139,20 @@ func (c *Client) readAsset(ctx context.Context, original string, size int64) (_ 
 	req.Header.Set("User-Agent", "jevwise-update")
 	res, err := client.Do(req)
 	if err != nil {
+		debuglog.Event(ctx, "update.asset.failed."+networkReason(err))
 		return nil, err
 	}
 	defer res.Body.Close()
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	rateLimited := logHTTP(ctx, "update.asset", res)
 	if res.StatusCode != http.StatusOK {
+		reason := "http_status"
+		if rateLimited {
+			reason = "rate_limited"
+		}
+		debuglog.Event(ctx, "update.asset.failed."+reason)
 		return nil, errors.New("unexpected release asset status")
 	}
 	data, err := io.ReadAll(io.LimitReader(res.Body, size+1))

@@ -62,6 +62,7 @@ bin/jevwise update --check --timeout 20s
 bin/jevwise update --timeout 60s # Install on supported standalone Linux/macOS builds
 ```
 
+- `--debug update --check` shows the fixed `bitbrew-dev/jevwise` endpoint, HTTP status, rate-limit remaining/reset/retry seconds and failure category. Anonymous checks can be rate-limited: wait for the limit to reset. A 403 without rate-limit evidence is reported as an HTTP failure, not assumed to be rate limiting.
 - `--check` checks the latest stable GitHub release without downloading a binary or changing files. No background checks, API credentials, or decision configuration are used.
 - `--timeout` is a positive flag-only deadline for the whole update, default `10s`; decision timeout environment/config values do not affect updates. Increase it for slow downloads.
 - Reports newer/current releases or no published release. Development/unknown builds report the latest release without inventing a version comparison.
@@ -113,7 +114,7 @@ jevwise --debug mcp
 
 - Debug logging is opt-in via `--debug`, uses `github.com/phuslu/log`, and writes JSON to stderr. Normal stdout stays unchanged; logs can be redirected with `2>debug.log`.
 - Covers command/stage outcomes and timing, config loading, API attempts/retries/status codes, release verification/replacement, skills, MCP requests/lifecycle and authenticated management.
-- Never logs credentials, prompts/options/results, URLs/paths, headers/bodies, or raw error causes. Treat timing/status diagnostics as operationally sensitive when sharing logs.
+- Never logs credentials, prompts/options/results, user-supplied URLs/paths, raw headers/bodies, or raw error causes. Release checks may log their fixed public GitHub endpoint and strictly numeric rate-limit metadata. Treat timing/status diagnostics as operationally sensitive when sharing logs.
 - Detached background mode traces the launcher only; child output remains isolated. There is no persistent debug log file. Use foreground MCP for request diagnostics, then restart without `--debug` when finished.
 - Logging is best-effort. Write failures do not change operation results. No global logger or SDK configuration is changed.
 

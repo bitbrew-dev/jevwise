@@ -16,3 +16,5 @@
 
 - 29 local QA passed after correcting blank selectors and short output writes: root fresh full gates, six builds and isolated native init/view smoke; independent full tests and CLI config race repeated 20 times. Public docs qualify ACL/privacy assumptions and field-only redaction.
 - Follow-up outside this scope: shared Cobra help-template write errors may be printed directly to stderr; harden the shared HelpFunc separately, not just config commands.
+
+- 30 local QA passed: root fresh full gates/six builds and fake-editor native smoke (PATH/default/custom spaced path/repair/override/help); independent final full tests and editor/config race repeated 10 times. Bounded inherited-pipe waits and owned-helper completion are regression-tested. This cohesive security regression justifies a small soft-300 exception; hard 450 remains satisfied. No real editor, API, agent, push, tag or release used.

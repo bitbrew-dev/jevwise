@@ -90,6 +90,6 @@ func newConfig() *cobra.Command {
 			}
 			return nil
 		}}
-	cmd.AddCommand(init, view)
+	cmd.AddCommand(init, view, newConfigEdit(runConfigEditor))
 	return cmd
 }

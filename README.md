@@ -8,7 +8,7 @@ A Go SDK for TypeSafe AI and the `jev` decision CLI.
 
 ## Build and run
 
-Use Go 1.27.1 or newer, matching `go.mod`. Run these commands from the checkout:
+Use Go 1.27.2 or newer, matching `go.mod`. Run these commands from the checkout:
 
 ```sh
 git clone https://github.com/bitbrew-dev/jevwise.git

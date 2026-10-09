@@ -117,7 +117,8 @@ Precedence: **changed flags > nonblank environment > TOML > defaults**.
 | Operation timeout | `--timeout` | `TS_JEV_TIMEOUT` | `10s` |
 
 - Explicit file: `--config /path/to/config.toml`. Missing or invalid explicit files fail.
-- Otherwise: `$XDG_CONFIG_HOME/ts-jev/config.toml`, or `$HOME/.config/ts-jev/config.toml`. A missing discovered file is allowed.
+- Otherwise: current-directory `jevwise.toml`, then `$XDG_CONFIG_HOME/ts-jev/config.toml` or `$HOME/.config/ts-jev/config.toml`. Only a missing global file is allowed. The selected file replaces rather than merges with global settings; no ancestor-directory search.
+- Trust the current directory before running decision/MCP commands: local settings can change the upstream destination. Environment/changed flags still win. Invalid, oversized (over 1 MiB), linked or nonregular local files fail without global fallback; help/version do not load them.
 - Start with [config.example.toml](config.example.toml). Prefer environment credentials rather than command-line secrets.
 
 ## Skill setup

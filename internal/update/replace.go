@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 )
 
 // InstallResult distinguishes publication from subsequent cleanup/cancellation.
@@ -31,7 +33,9 @@ type replaceHooks struct {
 // The lock coordinates cooperating installers, not hostile filesystem writers.
 // Only permission bits are preserved, not group ownership, ACLs or xattrs.
 // File sync precedes publication; no directory-sync/power-loss guarantee is made.
-func Replace(ctx context.Context, binary *Binary, current string) (InstallResult, error) {
+func Replace(ctx context.Context, binary *Binary, current string) (_ InstallResult, resultErr error) {
+	finish := debuglog.Trace(ctx, "update.replace")
+	defer func() { finish(resultErr) }()
 	if err := replaceCandidate(ctx, binary, current); err != nil {
 		return InstallResult{}, &replaceError{err}
 	}
@@ -84,6 +88,7 @@ func replaceAt(ctx context.Context, binary *Binary, current, directory, name str
 	}
 	defer func() { err = errors.Join(err, root.Close()) }()
 	lock := "." + name + ".jev-update-lock"
+	debuglog.Event(ctx, "update.lock.acquire")
 	if err = root.Mkdir(lock, 0o700); err != nil {
 		return result, err // Never remove a preexisting or stale lock.
 	}
@@ -166,6 +171,7 @@ func replaceAt(ctx context.Context, binary *Binary, current, directory, name str
 	if err = hooks.publish(root, stageName, name); err != nil {
 		return result, err
 	}
+	debuglog.Event(ctx, "update.published")
 	result.Installed, stageName = true, ""
 	return result, ctx.Err()
 }

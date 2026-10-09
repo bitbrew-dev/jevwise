@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 )
 
 const latestURL = "https://api.github.com/repos/bitbrew-dev/jevwise/releases/latest"
@@ -57,7 +59,9 @@ func NewClient(client *http.Client) *Client {
 }
 
 // Latest obtains bounded metadata for the newest stable release.
-func (c *Client) Latest(ctx context.Context) (Release, error) {
+func (c *Client) Latest(ctx context.Context) (_ Release, resultErr error) {
+	finish := debuglog.Trace(ctx, "update.lookup")
+	defer func() { finish(resultErr) }()
 	fail := func(err error) (Release, error) {
 		if ctx != nil && ctx.Err() != nil {
 			err = ctx.Err()

@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/bitbrew-dev/jevwise/internal/buildinfo"
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/bitbrew-dev/jevwise/internal/service"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -72,7 +73,15 @@ func New(lifetime context.Context, svc service.DecisionService, timeout time.Dur
 }
 
 func decisionHandler(lifetime context.Context, svc service.DecisionService, timeout time.Duration) mcp.ToolHandler {
-	return func(ctx context.Context, call *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	return func(ctx context.Context, call *mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {
+		finish := debuglog.Trace(lifetime, "mcp.decide")
+		defer func() {
+			loggedErr := err
+			if loggedErr == nil && result != nil && result.IsError {
+				loggedErr = result.GetError()
+			}
+			finish(loggedErr)
+		}()
 		if ctx == nil || call == nil || call.Params == nil || len(call.Params.Arguments) > inputLimit || !utf8.Valid(call.Params.Arguments) {
 			return toolFailure("invalid decision input", errors.New("invalid tool request"))
 		}

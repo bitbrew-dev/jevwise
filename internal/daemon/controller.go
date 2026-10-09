@@ -10,6 +10,8 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 )
 
 const controlResponseLimit = 4 << 10
@@ -59,7 +61,9 @@ func (c *Controller) Stop(ctx context.Context) (ManagementStatus, error) {
 	return c.request(ctx, http.MethodPost, "/_jev/stop")
 }
 
-func (c *Controller) request(ctx context.Context, method, path string) (ManagementStatus, error) {
+func (c *Controller) request(ctx context.Context, method, path string) (_ ManagementStatus, resultErr error) {
+	finish := debuglog.Trace(ctx, "mcp.management.request")
+	defer func() { finish(resultErr) }()
 	fail := func(cause error) (ManagementStatus, error) {
 		return ManagementStatus{}, &controlError{cause}
 	}

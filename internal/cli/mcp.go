@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bitbrew-dev/jevwise/internal/daemon"
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/bitbrew-dev/jevwise/internal/mcpserver"
 	"github.com/bitbrew-dev/jevwise/internal/service"
 	"github.com/spf13/cobra"
@@ -66,6 +67,7 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 			if background {
 				return runMCPBackground(cmd, cfg, canonical, token, runtimeDir, start)
 			}
+			debuglog.Event(ctx, "mcp.service.initialize")
 			svc, cleanup, err := factory(cfg)
 			if cleanup != nil {
 				defer cleanup()

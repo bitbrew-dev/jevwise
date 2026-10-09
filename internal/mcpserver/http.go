@@ -11,6 +11,7 @@ import (
 	"net/netip"
 	"strings"
 
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -79,6 +80,7 @@ func NewHTTP(server *mcp.Server, address, token string) (http.Handler, error) {
 			status = http.StatusMethodNotAllowed
 		}
 		if status != 0 {
+			debuglog.Count(r.Context(), "mcp.http.rejected", status)
 			http.Error(w, "MCP request rejected", status)
 			return
 		}
@@ -86,6 +88,7 @@ func NewHTTP(server *mcp.Server, address, token string) (http.Handler, error) {
 		case slots <- struct{}{}:
 			defer func() { <-slots }()
 		default:
+			debuglog.Event(r.Context(), "mcp.http.busy")
 			http.Error(w, "MCP server is busy", http.StatusServiceUnavailable)
 			return
 		}
@@ -94,15 +97,18 @@ func NewHTTP(server *mcp.Server, address, token string) (http.Handler, error) {
 		}
 		body, err := io.ReadAll(io.LimitReader(r.Body, inputLimit+1))
 		if len(body) > inputLimit {
+			debuglog.Count(r.Context(), "mcp.http.rejected", http.StatusRequestEntityTooLarge)
 			http.Error(w, "MCP request rejected", http.StatusRequestEntityTooLarge)
 			return
 		}
 		if err != nil || r.Context().Err() != nil {
+			debuglog.Count(r.Context(), "mcp.http.rejected", http.StatusBadRequest)
 			http.Error(w, "MCP request rejected", http.StatusBadRequest)
 			return
 		}
 		// Even legacy revisions cannot batch paid decisions through one slot.
 		if trimmed := bytes.TrimSpace(body); len(trimmed) > 0 && trimmed[0] == '[' {
+			debuglog.Count(r.Context(), "mcp.http.rejected", http.StatusBadRequest)
 			http.Error(w, "MCP request rejected", http.StatusBadRequest)
 			return
 		}
@@ -111,6 +117,7 @@ func NewHTTP(server *mcp.Server, address, token string) (http.Handler, error) {
 		writer := &httpPrivacyWriter{ResponseWriter: w}
 		transport.ServeHTTP(writer, r)
 		writer.finish()
+		debuglog.Count(r.Context(), "mcp.http.status", writer.status)
 	}), nil
 }
 

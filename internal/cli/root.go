@@ -7,6 +7,7 @@ import (
 
 	"github.com/bitbrew-dev/jevwise/internal/buildinfo"
 	"github.com/bitbrew-dev/jevwise/internal/config"
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/bitbrew-dev/jevwise/internal/mcpserver"
 	"github.com/bitbrew-dev/jevwise/internal/update"
 	"github.com/phuslu/log"
@@ -48,6 +49,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	// Leave Command.Version empty: Cobra prints raw version-template writer errors.
 	cmd.Flags().BoolVar(&showVersion, "version", false, "Print version and build metadata")
 	flags := cmd.PersistentFlags()
+	flags.Bool("debug", false, "Write safe structured debug logs to stderr")
 	flags.String("config", "", "Path to TOML configuration")
 	flags.String("provider", "jev", "Decision provider: jev, codex or claude")
 	flags.String("api-key", "", "Jev API key (prefer environment or config)")
@@ -62,14 +64,22 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	cmd.AddCommand(newMCP(factory, mcpserver.Run))
 	cmd.AddCommand(newMCPChild(factory))
 	cmd.AddCommand(newSkill(newSkillFetch(nil), installSkill))
+	instrumentCommands(cmd)
 	return cmd
 }
 
 // LoadConfig resolves a command's inherited flags without changing global state.
-func LoadConfig(cmd *cobra.Command) (config.Config, error) {
+func LoadConfig(cmd *cobra.Command) (_ config.Config, resultErr error) {
+	finish := debuglog.Trace(cmd.Context(), "config.load")
+	defer func() { finish(resultErr) }()
 	path, err := cmd.Flags().GetString("config")
 	if err != nil {
 		return config.Config{}, errors.New("configuration flag is unavailable")
+	}
+	if path == "" {
+		debuglog.Event(cmd.Context(), "config.discovery")
+	} else {
+		debuglog.Event(cmd.Context(), "config.explicit")
 	}
 	return config.Load(path, cmd.Flags())
 }
@@ -77,5 +87,9 @@ func LoadConfig(cmd *cobra.Command) (config.Config, error) {
 // Logger writes only to the command's error stream. Log status and safe metadata,
 // never credentials, prompt bodies, option content, or raw request/response bodies.
 func Logger(cmd *cobra.Command) log.Logger {
-	return log.Logger{Level: log.InfoLevel, Writer: log.IOWriter{Writer: cmd.ErrOrStderr()}}
+	level := log.InfoLevel
+	if enabled, _ := cmd.Root().PersistentFlags().GetBool("debug"); enabled {
+		level = log.DebugLevel
+	}
+	return log.Logger{Level: level, Writer: log.IOWriter{Writer: cmd.ErrOrStderr()}}
 }

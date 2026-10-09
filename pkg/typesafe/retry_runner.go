@@ -5,6 +5,8 @@ import (
 	"errors"
 	"math/rand/v2"
 	"time"
+
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 )
 
 // retryHooks are per-call seams. Missing hooks use production defaults; no
@@ -35,7 +37,9 @@ func retrySleep(ctx context.Context, delay time.Duration) error {
 // runRetry repeats an entire HTTP-plus-decode attempt. The retry budget only
 // prevents starting another attempt: it does not cancel in-flight work. Context
 // expiration returns its sentinel so the client can attach safe HTTP metadata.
-func runRetry(ctx context.Context, policy RetryPolicy, attempt func(context.Context, int) (*RawResponse, error), hooks retryHooks) (*RawResponse, error) {
+func runRetry(ctx context.Context, policy RetryPolicy, attempt func(context.Context, int) (*RawResponse, error), hooks retryHooks) (_ *RawResponse, resultErr error) {
+	finish := debuglog.Trace(ctx, "api.retry")
+	defer func() { finish(resultErr) }()
 	if ctx == nil {
 		return nil, errors.New("typesafe: retry context is required")
 	}
@@ -67,6 +71,7 @@ func runRetry(ctx context.Context, policy RetryPolicy, attempt func(context.Cont
 		if index > 0 && policy.Budget > 0 && hooks.now().Sub(started) >= policy.Budget {
 			return raw, err
 		}
+		debuglog.Count(ctx, "api.attempt", index)
 		raw, err = attempt(ctx, index)
 		if contextErr := ctx.Err(); contextErr != nil {
 			return raw, contextErr
@@ -91,6 +96,7 @@ func runRetry(ctx context.Context, policy RetryPolicy, attempt func(context.Cont
 		if policy.Budget > 0 && delay >= remaining {
 			return raw, err
 		}
+		debuglog.Event(ctx, "api.retry.wait")
 		sleepErr := hooks.sleep(ctx, delay)
 		if contextErr := ctx.Err(); contextErr != nil {
 			return raw, contextErr

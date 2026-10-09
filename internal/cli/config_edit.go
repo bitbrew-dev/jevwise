@@ -10,12 +10,15 @@ import (
 	"time"
 
 	"github.com/bitbrew-dev/jevwise/internal/config"
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/spf13/cobra"
 )
 
 type configEditor func(context.Context, string, string, io.Reader, io.Writer, io.Writer) error
 
-func runConfigEditor(ctx context.Context, editor, path string, in io.Reader, out, stderr io.Writer) error {
+func runConfigEditor(ctx context.Context, editor, path string, in io.Reader, out, stderr io.Writer) (resultErr error) {
+	finish := debuglog.Trace(ctx, "config.editor")
+	defer func() { finish(resultErr) }()
 	process := exec.CommandContext(ctx, editor, path) // No shell; absolute file is one argument.
 	process.WaitDelay = 250 * time.Millisecond        // Bound inherited Go-copy pipe waits.
 	process.Stdin, process.Stdout, process.Stderr = in, out, stderr
@@ -41,6 +44,7 @@ func newConfigEdit(run configEditor) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			debuglog.Event(cmd.Context(), "config.edit.inspect")
 			info, err := os.Lstat(path)
 			if err != nil || !info.Mode().IsRegular() {
 				return errors.New("config edit requires an existing regular file, not a link; initialize it first")

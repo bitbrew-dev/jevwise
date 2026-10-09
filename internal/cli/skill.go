@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/spf13/cobra"
 )
 
@@ -132,6 +133,7 @@ func newSkill(fetch skillFetch, install skillInstall) *cobra.Command {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
+			debuglog.Event(ctx, "skill.fetch")
 			data, err := fetch(ctx)
 			if err != nil {
 				return &decisionError{"cannot fetch Jev skill", err}

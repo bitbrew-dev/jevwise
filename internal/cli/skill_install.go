@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"runtime"
+
+	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 )
 
 var errSkillExists = errors.New("skill already exists; use --force to replace it")
@@ -30,6 +32,8 @@ func installSkill(ctx context.Context, data []byte, target string, force bool) e
 // replacement; Unix rename replaces the directory entry, never its old inode.
 // Directory and final-link checks are static checks, not hostile-writer CAS.
 func installSkillAt(ctx context.Context, project string, data []byte, target string, force bool, hooks skillInstallHooks) (err error) {
+	finish := debuglog.Trace(ctx, "skill.install")
+	defer func() { finish(err) }()
 	if ctx == nil {
 		return errors.New("skill context is required")
 	}

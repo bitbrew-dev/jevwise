@@ -13,3 +13,6 @@
 - Implementation split adjusted to four small branches so tests and documentation remain below the 300-line target; behavior unchanged.
 
 - 28 local QA passed: root fresh full gates and six builds; independent full tests and config race repeated 20 times. Initialization preserves existing entries and cleans staging; file view ignores environment and redacts only api_key. Mode bits are not ACL enforcement, so require trusted parent ownership/ACLs in public CLI docs.
+
+- 29 local QA passed after correcting blank selectors and short output writes: root fresh full gates, six builds and isolated native init/view smoke; independent full tests and CLI config race repeated 20 times. Public docs qualify ACL/privacy assumptions and field-only redaction.
+- Follow-up outside this scope: shared Cobra help-template write errors may be printed directly to stderr; harden the shared HelpFunc separately, not just config commands.

@@ -26,7 +26,7 @@ type Config struct {
 // Neither global Viper state nor the supplied flags are mutated.
 func Load(path string, flags *pflag.FlagSet) (Config, error) {
 	v := viper.New()
-	defaults := map[string]string{"api_key": "", "base_url": "https://api.typesafe.ai", "model": "jev-latest", "provider": "jev", "timeout": "10s"}
+	defaults := defaultValues()
 	for key, value := range defaults {
 		v.SetDefault(key, value)
 	}
@@ -71,7 +71,16 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 		}
 		values[key] = strings.TrimSpace(value)
 	}
+	return fromValues(values)
+}
+
+func defaultValues() map[string]string {
+	return map[string]string{"api_key": "", "base_url": "https://api.typesafe.ai", "model": "jev-latest", "provider": "jev", "timeout": "10s"}
+}
+
+func fromValues(values map[string]string) (Config, error) {
 	c := Config{APIKey: values["api_key"], BaseURL: values["base_url"], Model: values["model"], Provider: values["provider"]}
+	var err error
 	c.Timeout, err = time.ParseDuration(values["timeout"])
 	if err != nil {
 		return Config{}, errors.New("timeout must be a positive duration")

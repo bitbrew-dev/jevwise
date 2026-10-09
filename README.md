@@ -120,6 +120,8 @@ Precedence: **changed flags > nonblank environment > TOML > defaults**.
 - Otherwise: current-directory `jevwise.toml`, then `$XDG_CONFIG_HOME/ts-jev/config.toml` or `$HOME/.config/ts-jev/config.toml`. Only a missing global file is allowed. The selected file replaces rather than merges with global settings; no ancestor-directory search.
 - Trust the current directory before running decision/MCP commands: local settings can change the upstream destination. Environment/changed flags still win. Invalid, oversized (over 1 MiB), linked or nonregular local files fail without global fallback; help/version do not load them.
 - Start with [config.example.toml](config.example.toml). Prefer environment credentials rather than command-line secrets.
+- TOML `api_key` supports `$NAME`/`${NAME}`, for example `api_key = "${MY_JEV_KEY}"`. Runtime loading expands references and trims the result; undefined variables become empty.
+- Environment and `--api-key` values stay literal. File viewing never expands references or requires a key; Jev service initialization requires a nonblank key.
 
 ### Initialize, inspect and edit
 

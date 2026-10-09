@@ -1,4 +1,4 @@
-// Package update checks public Jev releases without SDK credentials.
+// Package update checks public Jevwise releases without SDK credentials.
 package update
 
 import (
@@ -17,7 +17,7 @@ const latestURL = "https://api.github.com/repos/bitbrew-dev/jevwise/releases/lat
 const metadataLimit = 1 << 20
 
 // ErrNoRelease means GitHub has no published stable release.
-var ErrNoRelease = errors.New("no published stable Jev release")
+var ErrNoRelease = errors.New("no published stable Jevwise release")
 
 // Asset describes an artifact without trusting its metadata download URL.
 type Asset struct {
@@ -33,7 +33,7 @@ type Release struct {
 
 type safeError struct{ cause error }
 
-func (e *safeError) Error() string { return "cannot check Jev release" }
+func (e *safeError) Error() string { return "cannot check Jevwise release" }
 func (e *safeError) Unwrap() error { return e.cause }
 
 // Client checks one fixed public repository using isolated HTTP settings.
@@ -76,7 +76,7 @@ func (c *Client) Latest(ctx context.Context) (Release, error) {
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2026-03-10")
-	req.Header.Set("User-Agent", "jev-update")
+	req.Header.Set("User-Agent", "jevwise-update")
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return fail(err)

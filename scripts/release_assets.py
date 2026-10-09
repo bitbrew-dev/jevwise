@@ -24,8 +24,13 @@ def tag_valid(tag):
     return tag
 
 
+def command_name(tag):
+    return "jev" if tag_valid(tag) in LEGACY_TAGS else "jevwise"
+
+
 def asset_names(tag):
-    return [f"jev_{tag_valid(tag)}_{system}_{arch}" + (".exe" if system == "windows" else "")
+    command = command_name(tag)
+    return [f"{command}_{tag}_{system}_{arch}" + (".exe" if system == "windows" else "")
             for system, arch in PLATFORMS]
 
 
@@ -134,7 +139,7 @@ def build(metadata, source, directory):
         run(["go", "build", "-mod=readonly", "-trimpath", "-ldflags", flags, "-o", str(directory / name), "./cmd"], cwd=source, env=env)
     host = (run(["go", "env", "GOHOSTOS"]), run(["go", "env", "GOHOSTARCH"]))
     native = directory / names[PLATFORMS.index(host)]
-    command = "jev" if metadata["tag"] in LEGACY_TAGS else "jevwise"
+    command = command_name(metadata["tag"])
     if not run([str(native), "version"]).startswith(command + " " + metadata["tag"] + "\ncommit: " + metadata["commit"] + "\n"):
         raise ValueError("linked release metadata mismatch")
     with (directory / "SHA256SUMS").open("w", encoding="ascii", newline="\n") as manifest:

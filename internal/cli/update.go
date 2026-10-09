@@ -27,7 +27,7 @@ func updateFailure(installed bool, message string, cause error) error {
 
 func newUpdate(ops updateOps, current string) *cobra.Command {
 	var check bool
-	cmd := &cobra.Command{Use: "update", Short: "Install or check the latest stable Jev release",
+	cmd := &cobra.Command{Use: "update", Short: "Install or check the latest stable Jevwise release",
 		Args: func(_ *cobra.Command, args []string) error {
 			if len(args) != 0 {
 				return errors.New("update does not accept positional arguments")
@@ -72,9 +72,9 @@ func newUpdate(ops updateOps, current string) *cobra.Command {
 			var output string
 			installed := false
 			if errors.Is(err, update.ErrNoRelease) {
-				output = "No stable Jev release is published yet.\n"
+				output = "No stable Jevwise release is published yet.\n"
 			} else if err != nil {
-				return &decisionError{"cannot check Jev releases", err}
+				return &decisionError{"cannot check Jevwise releases", err}
 			} else {
 				if _, err := update.Compare(release.Tag, release.Tag); err != nil {
 					return &decisionError{"invalid latest release version", err}

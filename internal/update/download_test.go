@@ -13,7 +13,7 @@ import (
 )
 
 func downloadFixture(goos, arch string) (Release, map[string]string) {
-	name := "jev_v1.2.3_" + goos + "_" + arch
+	name := "jevwise_v1.2.3_" + goos + "_" + arch
 	if goos == "windows" {
 		name += ".exe"
 	}
@@ -35,7 +35,7 @@ func TestDownloadPlatforms(t *testing.T) {
 			caller := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { t.Fatal("caller redirect policy used"); return nil }}
 			caller.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
 				name := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
-				if r.URL.String() != "https://github.com/bitbrew-dev/jevwise/releases/download/v1.2.3/"+name || content[name] == "" || r.Method != "GET" || r.Header.Get("User-Agent") == "" {
+				if r.URL.String() != "https://github.com/bitbrew-dev/jevwise/releases/download/v1.2.3/"+name || content[name] == "" || r.Method != "GET" || r.Header.Get("User-Agent") != "jevwise-update" {
 					t.Fatalf("wrong asset request: %v", r)
 				}
 				if r.Header.Get("Authorization") != "" || r.Header.Get("Cookie") != "" {
@@ -73,6 +73,8 @@ func TestDownloadPreflight(t *testing.T) {
 	}{
 		{"tag", func(r *Release) { r.Tag = "v01.2.3" }, "linux", "amd64"},
 		{"missing", func(r *Release) { r.Assets = r.Assets[:1] }, "linux", "amd64"},
+		{"wrong-prefix", func(r *Release) { r.Assets[0].Name = strings.Replace(r.Assets[0].Name, "jevwise_", "other_", 1) }, "linux", "amd64"},
+		{"wrong-platform", func(r *Release) { r.Assets[0].Name = strings.Replace(r.Assets[0].Name, "_linux_", "_darwin_", 1) }, "linux", "amd64"},
 		{"duplicate", func(r *Release) { r.Assets = append(r.Assets, r.Assets[0]) }, "linux", "amd64"},
 		{"duplicate-manifest", func(r *Release) { r.Assets = append(r.Assets, r.Assets[1]) }, "linux", "amd64"},
 		{"zero", func(r *Release) { r.Assets[0].Size = 0 }, "linux", "amd64"},
@@ -253,5 +255,87 @@ func TestDownloadCancellationAndTransport(t *testing.T) {
 	}
 	if _, err := (*Client)(nil).Download(context.Background(), release, "linux", "amd64"); err == nil {
 		t.Fatal("nil client accepted")
+	}
+}
+
+func TestDownloadAssetNameCompatibilityAndNoDowngrade(t *testing.T) {
+	tests := []struct{ mode, os, arch string }{{"primary", "linux", "amd64"}}
+	for _, os := range []string{"linux", "darwin", "windows"} {
+		for _, arch := range []string{"amd64", "arm64"} {
+			tests = append(tests, struct{ mode, os, arch string }{"legacy", os, arch})
+		}
+	}
+	for _, mode := range []string{"zero", "negative", "oversize", "duplicate", "404", "checksum", "manifest", "missing-checksum"} {
+		tests = append(tests, struct{ mode, os, arch string }{mode, "linux", "amd64"})
+	}
+	for _, tc := range tests {
+		t.Run(tc.mode+"/"+tc.os+"/"+tc.arch, func(t *testing.T) {
+			release, content := downloadFixture(tc.os, tc.arch)
+			primary := release.Assets[0].Name
+			legacy := strings.Replace(primary, "jevwise_", "jev_", 1)
+			content[legacy] = "legacy binary"
+			legacyRow := fmt.Sprintf("%x  %s\n", sha256.Sum256([]byte(content[legacy])), legacy)
+			content["SHA256SUMS"] += legacyRow
+			release.Assets = append(release.Assets, Asset{Name: legacy, Size: int64(len(content[legacy]))})
+			preflight := false
+			switch tc.mode {
+			case "legacy":
+				release.Assets = release.Assets[1:]
+				content["SHA256SUMS"] = legacyRow
+			case "zero", "negative", "oversize", "duplicate":
+				preflight = true
+				switch tc.mode {
+				case "zero":
+					release.Assets[0].Size = 0
+				case "negative":
+					release.Assets[0].Size = -1
+				case "oversize":
+					release.Assets[0].Size = binaryLimit + 1
+				case "duplicate":
+					release.Assets = append(release.Assets, release.Assets[0])
+				}
+			case "checksum":
+				content[primary] = "corrupt binary!"
+			case "manifest":
+				content["SHA256SUMS"] = "z" + content["SHA256SUMS"][1:]
+			case "missing-checksum":
+				content["SHA256SUMS"] = legacyRow
+			}
+			for i := range release.Assets {
+				if release.Assets[i].Name == "SHA256SUMS" {
+					release.Assets[i].Size = int64(len(content["SHA256SUMS"]))
+				}
+			}
+			var names []string
+			client := NewClient(&http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+				name := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+				names = append(names, name)
+				if preflight || (name == legacy && tc.mode != "legacy") {
+					t.Fatal("invalid primary triggered HTTP or legacy downgrade")
+				}
+				if content[name] == "" || r.Header.Get("User-Agent") != "jevwise-update" || r.Header.Get("Authorization") != "" || r.Header.Get("Cookie") != "" {
+					t.Fatal("unexpected asset request or credentials")
+				}
+				status := http.StatusOK
+				if tc.mode == "404" && name == primary {
+					status = http.StatusNotFound
+				}
+				return assetResponse(status, strings.NewReader(content[name]), nil), nil
+			})})
+			binary, err := client.Download(context.Background(), release, tc.os, tc.arch)
+			if tc.mode != "primary" && tc.mode != "legacy" {
+				if err == nil || binary != nil || (preflight && len(names) != 0) {
+					t.Fatal("primary failure accepted or retried", err)
+				}
+				return
+			}
+			chosen := primary
+			if tc.mode == "legacy" {
+				chosen = legacy
+			}
+			if err != nil || binary == nil || string(binary.data) != content[chosen] || len(names) != 2 || names[0] != "SHA256SUMS" || names[1] != chosen {
+				t.Fatal("wrong primary/legacy selection", names, err)
+			}
+		})
 	}
 }

@@ -52,7 +52,7 @@ func TestReplaceRefusesSameMetadataInodeExchange(t *testing.T) {
 
 func TestLatestDownloadReplaceIntegration(t *testing.T) {
 	original, candidate := replacementFixture(t)
-	name := "jev_" + candidate.tag + "_" + runtime.GOOS + "_" + runtime.GOARCH
+	name := "jevwise_" + candidate.tag + "_" + runtime.GOOS + "_" + runtime.GOARCH
 	for _, malformed := range []bool{false, true} {
 		t.Run(fmt.Sprintf("malformed=%v", malformed), func(t *testing.T) {
 			directory, path := replacementTarget(t, original)
@@ -67,7 +67,7 @@ func TestLatestDownloadReplaceIntegration(t *testing.T) {
 			var bodies []*trackedBody
 			client := NewClient(&http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 				index := len(bodies)
-				if index >= len(expected) || r.URL.String() != expected[index] {
+				if index >= len(expected) || r.URL.String() != expected[index] || r.Header.Get("User-Agent") != "jevwise-update" {
 					t.Fatalf("unexpected integration request %s", r.URL)
 				}
 				var reader io.Reader = bytes.NewReader(candidate.data)

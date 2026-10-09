@@ -25,7 +25,7 @@ type Binary struct {
 
 type downloadError struct{ cause error }
 
-func (e *downloadError) Error() string { return "cannot download Jev release" }
+func (e *downloadError) Error() string { return "cannot download Jevwise release" }
 func (e *downloadError) Unwrap() error { return e.cause }
 
 // Download verifies one exact platform artifact against the release's SHA256SUMS.
@@ -49,9 +49,21 @@ func (c *Client) Download(ctx context.Context, release Release, goos, goarch str
 	if (goos != "linux" && goos != "darwin" && goos != "windows") || (goarch != "amd64" && goarch != "arm64") {
 		return fail(errors.New("unsupported release platform"))
 	}
-	name := "jev_" + release.Tag + "_" + goos + "_" + goarch
+	name := "jevwise_" + release.Tag + "_" + goos + "_" + goarch
 	if goos == "windows" {
 		name += ".exe"
+	}
+	// Metadata presence selects the new name, even when that asset is invalid.
+	// Legacy names are only a compatibility path for releases without it.
+	primaryPresent := false
+	for _, asset := range release.Assets {
+		if asset.Name == name {
+			primaryPresent = true
+			break
+		}
+	}
+	if !primaryPresent {
+		name = "jev_" + strings.TrimPrefix(name, "jevwise_")
 	}
 	sizes := make(map[string]int64, 2)
 	for _, asset := range release.Assets {
@@ -112,7 +124,7 @@ func (c *Client) readAsset(ctx context.Context, original string, size int64) ([]
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "jev-update")
+	req.Header.Set("User-Agent", "jevwise-update")
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err

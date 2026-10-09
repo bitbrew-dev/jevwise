@@ -113,7 +113,7 @@ func TestUpdateNoReleaseAndSafeErrors(t *testing.T) {
 		cmd := updateRoot(func(context.Context) (update.Release, error) { return update.Release{}, lookupError }, "dev")
 		out, _, err := execute(cmd, "update", "--check")
 		if errors.Is(lookupError, update.ErrNoRelease) {
-			if err != nil || out != "No stable Jev release is published yet.\n" {
+			if err != nil || out != "No stable Jevwise release is published yet.\n" {
 				t.Fatal("missing release not informational", err)
 			}
 		} else if !errors.Is(err, cause) || out != "" || strings.Contains(err.Error(), "private-lookup-content") {

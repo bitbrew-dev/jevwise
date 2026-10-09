@@ -23,6 +23,7 @@ type Config struct {
 // Load applies changed flags > nonblank environment > TOML > defaults.
 // An empty path selects ./jevwise.toml before the XDG/HOME global file.
 // Only a missing default global file is optional; selected files never merge.
+// TOML API keys expand $NAME/${NAME}; environment and flag keys stay literal.
 // Neither global Viper state nor the supplied flags are mutated.
 func Load(path string, flags *pflag.FlagSet) (Config, error) {
 	v := viper.New()
@@ -63,11 +64,20 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 	if err := v.MergeConfigMap(env); err != nil {
 		return Config{}, errors.New("cannot apply environment configuration")
 	}
+	apiKeyFromFile := env["api_key"] == nil
+	if flags != nil {
+		if flag := flags.Lookup("api-key"); flag != nil && flag.Changed {
+			apiKeyFromFile = false
+		}
+	}
 	values := make(map[string]string)
 	for key := range defaults {
 		value, ok := v.Get(key).(string)
 		if !ok {
 			return Config{}, fmt.Errorf("%s must be a string", key)
+		}
+		if key == "api_key" && apiKeyFromFile {
+			value = os.ExpandEnv(value)
 		}
 		values[key] = strings.TrimSpace(value)
 	}

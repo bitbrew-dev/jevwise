@@ -13,6 +13,7 @@ import urllib.request
 REPOSITORY = "bitbrew-dev/jevwise"
 PLATFORMS = [(system, arch) for system in ("darwin", "linux", "windows") for arch in ("amd64", "arm64")]
 BUILDINFO = "github.com/bitbrew-dev/jevwise/internal/buildinfo"
+LEGACY_TAGS = {"v1.0.0", "v1.1.0", "v1.2.0"}
 
 
 def tag_valid(tag):
@@ -133,7 +134,8 @@ def build(metadata, source, directory):
         run(["go", "build", "-mod=readonly", "-trimpath", "-ldflags", flags, "-o", str(directory / name), "./cmd"], cwd=source, env=env)
     host = (run(["go", "env", "GOHOSTOS"]), run(["go", "env", "GOHOSTARCH"]))
     native = directory / names[PLATFORMS.index(host)]
-    if not run([str(native), "version"]).startswith("jev " + metadata["tag"] + "\ncommit: " + metadata["commit"] + "\n"):
+    command = "jev" if metadata["tag"] in LEGACY_TAGS else "jevwise"
+    if not run([str(native), "version"]).startswith(command + " " + metadata["tag"] + "\ncommit: " + metadata["commit"] + "\n"):
         raise ValueError("linked release metadata mismatch")
     with (directory / "SHA256SUMS").open("w", encoding="ascii", newline="\n") as manifest:
         manifest.write(checksums(directory, names))

@@ -184,7 +184,7 @@ class ReleaseFixtures(unittest.TestCase):
                     Path(arguments[arguments.index("-o") + 1]).write_bytes((env["GOOS"] + env["GOARCH"]).encode())
                     return ""
                 self.assertTrue(arguments[0].endswith("darwin_arm64"))
-                return f"jev {TAG}\ncommit: {COMMIT}\n"
+                return f"jevwise {TAG}\ncommit: {COMMIT}\n"
             with patch.object(release, "run", side_effect=build_run) as run:
                 release.build(META, Path(temp), directory)
             self.assertEqual(sum(call.args[0][:2] == ["go", "build"] for call in run.call_args_list), 6)
@@ -193,6 +193,23 @@ class ReleaseFixtures(unittest.TestCase):
             self.assertEqual(manifest.splitlines(), sorted(manifest.splitlines(), key=lambda line: line.split("  ")[1]))
             with patch.dict(os.environ, {"GH_TOKEN": "secret"}), patch.object(release, "run", side_effect=[COMMIT, ""]), self.assertRaises(ValueError):
                 release.build(META, Path(temp), Path(temp) / "blocked")
+
+    def test_legacy_tag_native_identity_remains_supported(self):
+        for tag in sorted(release.LEGACY_TAGS):
+            with self.subTest(tag=tag), tempfile.TemporaryDirectory() as temp, patch.dict(os.environ, {}, clear=True):
+                def build_run(arguments, cwd=None, env=None):
+                    if arguments[:3] == ["git", "rev-parse", "HEAD"]:
+                        return COMMIT
+                    if arguments[0] == "git":
+                        return ""
+                    if arguments[:2] == ["go", "env"]:
+                        return {"GOHOSTOS": "darwin", "GOHOSTARCH": "arm64"}[arguments[2]]
+                    if arguments[:2] == ["go", "build"]:
+                        Path(arguments[arguments.index("-o") + 1]).write_bytes(b"fixture")
+                        return ""
+                    return f"jev {tag}\ncommit: {COMMIT}\n"
+                with patch.object(release, "run", side_effect=build_run):
+                    release.build(dict(META, tag=tag), Path(temp), Path(temp) / "assets")
 
     def test_publication_preflight_identity_pagination_and_manifest_last(self):
         with tempfile.TemporaryDirectory() as temp:

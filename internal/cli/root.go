@@ -26,7 +26,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	}
 	var showVersion bool
 	cmd := &cobra.Command{
-		Use: "jev", Short: "Make decisions with Jev",
+		Use: buildinfo.CommandName, Short: "Make decisions with Jev",
 		SilenceUsage: true, SilenceErrors: true,
 		Args: func(_ *cobra.Command, args []string) error {
 			if len(args) != 0 {

@@ -1,5 +1,5 @@
 .EXPORT_ALL_VARIABLES:
-NAME = jev
+NAME = jevwise
 DirName ?= build
 PKG = github.com/bitbrew-dev/jevwise/internal/buildinfo
 ProjectUrl = "https://github.com/bitbrew-dev/jevwise"

@@ -24,7 +24,7 @@ func TestVersionFormsAreIdenticalAndIndependent(t *testing.T) {
 			return nil, nil, nil
 		})
 		out, stderr, err := execute(cmd, form, "--config", "/missing", "--timeout", "invalid", "--provider", "invalid")
-		if err != nil || stderr != "" || out != buildinfo.String() || !strings.HasPrefix(out, "jev dev\ncommit: unknown\nbuilt: unknown\n") {
+		if err != nil || stderr != "" || out != buildinfo.String() || !strings.HasPrefix(out, "jevwise dev\ncommit: unknown\nbuilt: unknown\n") {
 			t.Fatalf("version output incorrect: %q %q %v", out, stderr, err)
 		}
 	}

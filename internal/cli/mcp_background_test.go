@@ -175,7 +175,7 @@ func TestBackgroundExistingOwnedInstanceNeverLaunches(t *testing.T) {
 				t.Fatal("unsafe existing instance was adopted")
 			}
 			if phase == "prepared" {
-				if err.Error() != "MCP background instance is preparing; wait and check jev mcp status" {
+				if err.Error() != "MCP background instance is preparing; wait and check jevwise mcp status" {
 					t.Fatalf("prepared instance = %v", err)
 				}
 				controller, err := daemon.NewController(address, before.Instance, keyBefore)
@@ -232,7 +232,7 @@ func TestBackgroundUncertainStartAndOutputFailures(t *testing.T) {
 		cmd.SetArgs([]string{"mcp", "--background", "--runtime-dir", dir, "--api-key", "fixture-key"})
 		cmd.SetOut(versionWriter{short: true})
 		err := cmd.ExecuteContext(context.Background())
-		if err == nil || strings.Contains(err.Error(), "private") || ((kind == "after" || kind == "shortwrite") && !strings.Contains(err.Error(), "may be running")) {
+		if err == nil || strings.Contains(err.Error(), "private") || ((kind == "after" || kind == "shortwrite") && !strings.Contains(err.Error(), "may be running; use jevwise mcp status")) {
 			t.Fatal("unsafe or misleading startup failure", err)
 		}
 		if _, err := os.Lstat(dir); !errors.Is(err, os.ErrNotExist) {

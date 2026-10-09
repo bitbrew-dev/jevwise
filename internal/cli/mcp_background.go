@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/bitbrew-dev/jevwise/internal/buildinfo"
 	"github.com/bitbrew-dev/jevwise/internal/config"
 	"github.com/bitbrew-dev/jevwise/internal/daemon"
 	"github.com/bitbrew-dev/jevwise/internal/mcpserver"
@@ -53,7 +54,7 @@ func runMCPBackground(cmd *cobra.Command, cfg config.Config, address, agentToken
 		case "running":
 			return writeBackgroundEndpoint(cmd, state.Address)
 		case "prepared":
-			return errors.New("MCP background instance is preparing; wait and check jev mcp status")
+			return errors.New("MCP background instance is preparing; wait and check " + buildinfo.CommandName + " mcp status")
 		case "stopping":
 			return errors.New("MCP background instance is stopping; wait before starting again")
 		default:
@@ -112,7 +113,7 @@ func readBackgroundInstance(path string) (daemon.State, string, error) {
 }
 
 func backgroundUncertain(cause error) error {
-	return &decisionError{"MCP background may be running; use jev mcp status", cause}
+	return &decisionError{"MCP background may be running; use " + buildinfo.CommandName + " mcp status", cause}
 }
 
 func writeBackgroundEndpoint(cmd *cobra.Command, address string) error {

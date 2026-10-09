@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bitbrew-dev/jevwise/internal/config"
+	"github.com/bitbrew-dev/jevwise/internal/service"
 	"github.com/spf13/cobra"
 )
 
@@ -127,5 +129,53 @@ func TestCommandReceivesExecutionContext(t *testing.T) {
 	root.SetArgs([]string{"context"})
 	if err := root.ExecuteContext(ctx); err != context.Canceled {
 		t.Fatalf("context not propagated: %v", err)
+	}
+}
+
+func TestCommandIdentityHelpAndCompletion(t *testing.T) {
+	before := http.DefaultTransport
+	http.DefaultTransport = forbiddenTransport{t}
+	t.Cleanup(func() { http.DefaultTransport = before })
+	fresh := func() *cobra.Command {
+		return NewRootWithFactory(func(config.Config) (service.DecisionService, func(), error) {
+			t.Fatal("help or completion created a service")
+			return nil, nil, nil
+		})
+	}
+	root := fresh()
+	if root.Name() != "jevwise" || len(root.Aliases) != 0 {
+		t.Fatal("incorrect executable identity or legacy alias")
+	}
+	if _, _, err := execute(root, "--help"); err != nil {
+		t.Fatal(err)
+	}
+	var walk func(*cobra.Command)
+	walk = func(cmd *cobra.Command) {
+		args := append(strings.Fields(cmd.CommandPath())[1:], "--help")
+		out, stderr, err := execute(fresh(), args...)
+		if err != nil || stderr != "" || !strings.Contains(out, "\n  "+cmd.CommandPath()) {
+			t.Fatalf("help does not use renamed command path %q", cmd.CommandPath())
+		}
+		for _, alias := range cmd.Aliases {
+			if alias == "jev" {
+				t.Fatal("legacy command alias retained")
+			}
+		}
+		for _, child := range cmd.Commands() {
+			walk(child)
+		}
+	}
+	walk(root)
+	for shell, registration := range map[string]string{
+		"bash": "__start_jevwise jevwise", "zsh": "#compdef jevwise",
+		"fish": "complete -c jevwise", "powershell": "-CommandName 'jevwise'",
+	} {
+		out, stderr, err := execute(fresh(), "completion", shell)
+		if err != nil || stderr != "" || !strings.Contains(out, registration) {
+			t.Fatalf("%s completion does not register jevwise", shell)
+		}
+	}
+	if _, _, err := execute(fresh(), "jev"); err == nil {
+		t.Fatal("legacy root command accepted")
 	}
 }

@@ -1,6 +1,6 @@
 # Jevwise
 
-A Go SDK for TypeSafe AI and the `jev` decision CLI.
+A Go SDK for TypeSafe AI and the `jevwise` decision CLI.
 
 - SDK: `pkg/typesafe`, with typed questions, responses, raw metadata, and retries.
 - CLI: send a prompt and options to Jev, then print the service's probabilities as JSON.
@@ -13,19 +13,21 @@ Use Go 1.27.2 or newer, matching `go.mod`. Run these commands from the checkout:
 ```sh
 git clone https://github.com/bitbrew-dev/jevwise.git
 cd jevwise
-go build -o bin/jev ./cmd
-bin/jev --help
-bin/jev decide --help
+go build -o bin/jevwise ./cmd
+bin/jevwise --help
+bin/jevwise decide --help
 ```
 
 Help does not read credentials, configuration files, or contact the API.
 
+The current checkout uses `jevwise`; releases through v1.2.0 used `jev`. There is no `jev` alias. Existing configuration and the `jev` provider remain unchanged. Verify ownership before removing an older binary; another project may own the `jev` command.
+
 ```sh
 export TYPESAFE_API_KEY='<your-key>'
-bin/jev decide --prompt 'Which task should I tackle first?' \
+bin/jevwise decide --prompt 'Which task should I tackle first?' \
   --option 'Fix the bug' --option 'Write documentation'
 
-printf '%s' 'Which task should I tackle first?' | bin/jev decide --stdin \
+printf '%s' 'Which task should I tackle first?' | bin/jevwise decide --stdin \
   --option 'Fix the bug' --option 'Write documentation'
 ```
 
@@ -41,8 +43,8 @@ printf '%s' 'Which task should I tackle first?' | bin/jev decide --stdin \
 ## Version and platform builds
 
 ```sh
-bin/jev version
-bin/jev --version
+bin/jevwise version
+bin/jevwise --version
 make build-platform GOOS=windows GOARCH=amd64
 make build-platform GOOS=windows GOARCH=arm64
 ```
@@ -50,14 +52,14 @@ make build-platform GOOS=windows GOARCH=arm64
 - Both version forms report version, commit, and build date without credentials, config loading, or network requests.
 - Plain `go build` reports `dev` with unknown metadata. Make injects metadata; only a clean exact tag is automatically a release version, otherwise `dev`.
 - Release linker symbols are `github.com/bitbrew-dev/jevwise/internal/buildinfo.Version`, `.Commit`, and `.Date`.
-- Make produces `build/jev-windows-amd64.exe` or `build/jev-windows-arm64.exe`. Make helpers require Unix shell tools; native Windows PowerShell can use `go build -o jev.exe ./cmd`, then `.\jev.exe --version`.
+- Make produces `build/jevwise-windows-amd64.exe` or `build/jevwise-windows-arm64.exe`. Make helpers require Unix shell tools; native Windows PowerShell can use `go build -o jevwise.exe ./cmd`, then `.\jevwise.exe --version`.
 
 ## Release checks and updates
 
 ```sh
-bin/jev update --check
-bin/jev update --check --timeout 20s
-bin/jev update --timeout 60s # Install on supported standalone Linux/macOS builds
+bin/jevwise update --check
+bin/jevwise update --check --timeout 20s
+bin/jevwise update --timeout 60s # Install on supported standalone Linux/macOS builds
 ```
 
 - `--check` checks the latest stable GitHub release without downloading a binary or changing files. No background checks, API credentials, or decision configuration are used.
@@ -66,7 +68,7 @@ bin/jev update --timeout 60s # Install on supported standalone Linux/macOS build
 - Accepts canonical stable `vX.Y.Z` tags only; prereleases/drafts and malformed or oversized responses are refused.
 - Without `--check`, downloads and verifies a strictly newer release before replacement. Equal/newer installed versions are not rewritten or downgraded. Development, unknown and unstamped builds require manual installation.
 - Automatic installation supports Linux/macOS amd64/arm64 only. Windows still supports version reporting and release checks, but updates are manual. Use your package manager for managed installations.
-- After success, start a new invocation to use the new binary. An error saying the update was installed means publication succeeded but cancellation, cleanup or reporting failed: inspect `jev version` and any lock before retrying; no rollback occurs.
+- After success, start a new invocation to use the new binary. An error saying the update was installed means publication succeeded but cancellation, cleanup or reporting failed: inspect `jevwise version` and any lock before retrying; no rollback occurs.
 
 ## Release binaries
 
@@ -118,11 +120,11 @@ Precedence: **changed flags > nonblank environment > TOML > defaults**.
 ## Skill setup
 
 ```sh
-bin/jev skill          # Default: .agent/skills/typesafe-ai/SKILL.md
-bin/jev skill --agent  # Explicit default target
-bin/jev skill --claude # .claude/skills/typesafe-ai/SKILL.md
-bin/jev skill --force  # Replace an existing regular skill file
-bin/jev skill --online # Print the upstream GitHub URL only
+bin/jevwise skill          # Default: .agent/skills/typesafe-ai/SKILL.md
+bin/jevwise skill --agent  # Explicit default target
+bin/jevwise skill --claude # .claude/skills/typesafe-ai/SKILL.md
+bin/jevwise skill --force  # Replace an existing regular skill file
+bin/jevwise skill --online # Print the upstream GitHub URL only
 ```
 
 - Downloads the latest [upstream skill](https://github.com/typesafe-ai/skills/blob/main/skills/typesafe-ai/SKILL.md) unchanged, relative to the current project directory.
@@ -135,7 +137,7 @@ bin/jev skill --online # Print the upstream GitHub URL only
 
 ## Go SDK quickstart
 
-Import the public SDK from `github.com/bitbrew-dev/jevwise/pkg/typesafe`. The CLI executable remains `jev`.
+Import the public SDK from `github.com/bitbrew-dev/jevwise/pkg/typesafe`. The CLI executable is `jevwise`.
 
 Migration: replace previous `github.com/benbenbang/ts-jev-go-sdk/pkg/typesafe` imports with the new path. No old-module compatibility alias is provided; SDK APIs and configuration names are unchanged.
 
@@ -208,34 +210,34 @@ Tests use injected services/transports and local HTTP fixtures, not paid API req
 
 ## Local MCP
 
-MCP is included in v1.1.0. Diagnostic PID tracking is a newer, unreleased addition in the current checkout.
+MCP is included in v1.1.0; diagnostic PID tracking and schema-2 state are included in v1.2.0. The executable rename is newer than those releases.
 
-| Capability | v1.0.0 | v1.1.0 | Current checkout |
-| --- | --- | --- | --- |
-| Foreground and background MCP | Not included | Included | Included |
-| Authenticated status and stop | Not included | Included | Included |
-| Recorded child PID and schema-2 state | Not included | Not included | Included, unreleased |
+| Capability | v1.0.0 | v1.1.0 | v1.2.0 | Current checkout |
+| --- | --- | --- | --- | --- |
+| Foreground and background MCP | Not included | Included | Included | Included |
+| Authenticated status and stop | Not included | Included | Included | Included |
+| Recorded child PID and schema-2 state | Not included | Not included | Included | Included |
 
 The examples below describe the current checkout, using synthetic paths and addresses. They are not services started by this documentation.
 
 ### Start and manage
 
-Configure upstream credentials as for `jev decide`. Separately prepare a random agent bearer token in a protected, current-user-only file. Do not reuse your API key.
+Configure upstream credentials as for `jevwise decide`. Separately prepare a random agent bearer token in a protected, current-user-only file. Do not reuse your API key.
 
 ```sh
 # Synthetic examples: supply your own protected token file before running.
-bin/jev mcp --token-file /private/example/agent-token --listen 127.0.0.1:8080
-bin/jev mcp --background --token-file /private/example/agent-token
-bin/jev mcp status
-bin/jev mcp stop
+bin/jevwise mcp --token-file /private/example/agent-token --listen 127.0.0.1:8080
+bin/jevwise mcp --background --token-file /private/example/agent-token
+bin/jevwise mcp status
+bin/jevwise mcp stop
 ```
 
 | Command or flag | Behavior |
 | --- | --- |
-| `jev mcp` | Foreground server; prints the public `/mcp` endpoint after startup. Ctrl+C stops it. |
+| `jevwise mcp` | Foreground server; prints the public `/mcp` endpoint after startup. Ctrl+C stops it. |
 | `--background` | Starts a terminal-independent child after authenticated readiness and ownership checks. |
-| `jev mcp status` | Authenticates the exact instance and reports its startup/running state. The post-v1.1.0 checkout also shows the recorded PID when available. |
-| `jev mcp stop` | Authenticates the exact instance and requests shutdown; an acknowledgement is not a promise that cleanup has already finished. |
+| `jevwise mcp status` | Authenticates the exact instance and reports its startup/running state. v1.2.0 and newer also show the recorded PID when available. |
+| `jevwise mcp stop` | Authenticates the exact instance and requests shutdown; an acknowledgement is not a promise that cleanup has already finished. |
 | `--listen` | Literal loopback IP and nonzero port; default `127.0.0.1:8080`. |
 | `--runtime-dir` | Private background state directory; default `os.UserCacheDir()/jevwise-mcp`. Use the same override for start, status and stop. |
 | `--token-file` | Explicit protected agent-token file, overriding `JEV_MCP_TOKEN`; unreadable or unsafe files fail without fallback. |
@@ -246,8 +248,8 @@ bin/jev mcp stop
 - Background mode does not install a login item, reboot service or automatic restart. On Windows, a restrictive parent Job Object can prevent detachment or terminate the child when its parent exits.
 - A repeated background start returns an endpoint only for an authenticated running instance. If it is still preparing or stopping, wait and check status instead.
 - Stop and restart after changing credentials, decision configuration or the executable. Updating a binary does not change an already-running process.
-- Unreleased PID support (post-v1.1.0 checkout): background children save their own PID in private `<runtime-dir>/state.json`; authenticated status prints `PID: NUMBER (inspection only)`. Normal owned shutdown removes that state along with the key and lease. PID reuse means this number is not proof of ownership or liveness: use `jev mcp stop`, not a blind PID-based kill.
-- Unreleased state format: updated children write schema-2 state. The updated CLI still manages schema-1 instances without displaying a PID; older CLIs, including v1.1.0, cannot read schema-2 state. Stop an old instance before upgrading/restarting, and use the matching or newer CLI to manage a new child.
+- PID support (v1.2.0 and newer): background children save their own PID in private `<runtime-dir>/state.json`; authenticated status prints `PID: NUMBER (inspection only)`. Normal owned shutdown removes that state along with the key and lease. PID reuse means this number is not proof of ownership or liveness: use `jevwise mcp stop`, not a blind PID-based kill.
+- State format (v1.2.0 and newer): updated children write schema-2 state. The updated CLI still manages schema-1 instances without displaying a PID; older CLIs, including v1.1.0, cannot read schema-2 state. Stop an old instance before upgrading/restarting, and use the matching or newer CLI to manage a new child.
 
 ### Agent connection and limits
 

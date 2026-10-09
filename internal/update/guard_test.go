@@ -191,7 +191,7 @@ func TestMakeTrimmedExecutableGuard(t *testing.T) {
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("Make fixture build: %v\n%s", err, output)
 	}
-	data, err := os.ReadFile(filepath.Join(directory, "jev-"+runtime.GOOS+"-"+runtime.GOARCH))
+	data, err := os.ReadFile(filepath.Join(directory, "jevwise-"+runtime.GOOS+"-"+runtime.GOARCH))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -27,7 +27,7 @@ jobs:
       - name: Native build and credential-free smoke
         shell: pwsh
         run: |
-          $binary = if ($IsWindows) { './jev-ci.exe' } else { './jev-ci' }
+          $binary = if ($IsWindows) { './jevwise-ci.exe' } else { './jevwise-ci' }
           go build -o $binary ./cmd
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           foreach ($arguments in @(@('--help'), @('--version'), @('version'), @('skill', '--online'))) {
@@ -42,5 +42,5 @@ jobs:
           GOARCH: arm64
           CGO_ENABLED: '0'
         run: |
-          go build -o jev-windows-arm64.exe ./cmd
+          go build -o jevwise-windows-arm64.exe ./cmd
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

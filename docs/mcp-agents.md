@@ -1,22 +1,24 @@
 # Connect a local agent to Jevwise
 
-Use Codex or Claude Code on the **same computer** as the Jevwise MCP server. Jevwise serves Streamable HTTP at a literal-loopback `/mcp` endpoint, not stdio or legacy `/sse`. Do not register `jev mcp` as a stdio command or expose it through a public tunnel.
+Use Codex or Claude Code on the **same computer** as the Jevwise MCP server. Jevwise serves Streamable HTTP at a literal-loopback `/mcp` endpoint, not stdio or legacy `/sse`. Do not register `jevwise mcp` as a stdio command or expose it through a public tunnel.
 
-MCP is available in v1.1.0. Recorded PID/schema-2 state requires the newer unreleased checkout; see [release availability](../README.md#local-mcp).
+MCP is available in v1.1.0. Recorded PID/schema-2 state requires v1.2.0 or newer; see [release availability](../README.md#local-mcp).
+
+The commands below use the renamed checkout CLI, `jevwise`; published releases through v1.2.0 use `jev`.
 
 ## 1. Start Jevwise in the server terminal
 
 Prerequisites:
 
-- Install/build `jev` and configure the Jev provider as in the [README](../README.md#build-and-run).
+- Install/build `jevwise` and configure the Jev provider as in the [README](../README.md#build-and-run).
 - Prepare a random, separate agent bearer token in a protected current-user-only file. Follow the [token and runtime permissions](../README.md#credentials-state-and-safety), including Windows ACL requirements.
 - Replace the example token-file path below with your own existing protected file. Do not reuse your upstream API key or the runtime management key.
 
 ```sh
-# macOS/Linux shell; use jev.exe on Windows.
-jev mcp --background --token-file /absolute/path/to/protected/agent-token \
+# macOS/Linux shell; use jevwise.exe on Windows.
+jevwise mcp --background --token-file /absolute/path/to/protected/agent-token \
   --listen 127.0.0.1:8080
-jev mcp status
+jevwise mcp status
 ```
 
 Foreground mode omits `--background`. Keep its terminal open; Ctrl+C stops it. If you set `--runtime-dir`, use the same directory for start, status and stop.
@@ -99,13 +101,13 @@ See [Claude Code's official MCP documentation](https://code.claude.com/docs/en/m
 
 | Check | What it establishes |
 | --- | --- |
-| `jev mcp status` | The exact background instance authenticated its private management response. |
+| `jevwise mcp status` | The exact background instance authenticated its private management response. |
 | Client connected status and `decide` discovery | The client can authenticate and discover the MCP tool. |
 | Calling `decide` | A real decision request, which can incur upstream API charges. Not needed for setup verification. |
 
 If you intentionally want a decision, supply a `prompt` and at least two distinct `options`. Keep tool approval enabled and review the call before sending it.
 
-### Optional installed-client smoke test (unreleased checkout)
+### Optional installed-client smoke test (source checkout)
 
 From the source checkout, with both `codex` and `claude` installed on PATH, run in a macOS/Linux shell:
 
@@ -127,6 +129,6 @@ JEVWISE_MCP_AGENT_SMOKE=1 go test -mod=readonly -run '^TestRealAgentMCPDiscovery
 | Claude project server pending approval | Review the project and approve its `.mcp.json` entry in the client. |
 | Cannot verify background state | Inspect manually; do not delete state or kill a PID based only on metadata. |
 
-Stop with `jev mcp stop` using the same runtime directory. Acknowledgement is not a guarantee cleanup has already finished. Stop/restart after executable or credential changes. Use the matching/newer CLI for schema-2 instances.
+Stop with `jevwise mcp stop` using the same runtime directory. Acknowledgement is not a guarantee cleanup has already finished. Stop/restart after executable or credential changes. Use the matching/newer CLI for schema-2 instances.
 
 Remove only the client entry you added: `codex mcp remove jevwise`, or `claude mcp remove jevwise --scope local` for the local-scoped example. For project JSON, remove only that entry. Removing client configuration does not stop Jevwise. Clear `JEV_MCP_TOKEN` from the client terminal when finished.

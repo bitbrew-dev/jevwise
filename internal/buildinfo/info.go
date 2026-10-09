@@ -6,6 +6,9 @@ import (
 	"runtime"
 )
 
+// CommandName is the public executable and root-command identity.
+const CommandName = "jevwise"
+
 // Update stamps survive stripped, path-trimmed release builds for passive inspection.
 const UpdateStampPrefix = "JEVWISE_UPDATE_V1["
 const UpdateStampSuffix = "]JEVWISE_UPDATE_END"
@@ -23,6 +26,6 @@ func String() string {
 	if UpdateStamp != "" && UpdateStamp != UpdateStampPrefix+Version+UpdateStampSuffix {
 		version = "unknown"
 	}
-	return fmt.Sprintf("jev %s\ncommit: %s\nbuilt: %s\ngo: %s\nplatform: %s/%s\n",
+	return fmt.Sprintf(CommandName+" %s\ncommit: %s\nbuilt: %s\ngo: %s\nplatform: %s/%s\n",
 		version, Commit, Date, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 }

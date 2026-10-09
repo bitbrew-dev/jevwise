@@ -14,6 +14,7 @@ import (
 
 func cleanEnv(t *testing.T) {
 	t.Helper()
+	t.Chdir(t.TempDir())
 	for _, name := range []string{"TS_JEV_API_KEY", "TS_JEV_BASE_URL", "TS_JEV_MODEL", "TS_JEV_PROVIDER", "TS_JEV_TIMEOUT", "TYPESAFE_API_KEY", "TYPESAFE_BASE_URL", "TYPESAFE_DEFAULT_MODEL"} {
 		t.Setenv(name, "")
 	}

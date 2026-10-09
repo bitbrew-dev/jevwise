@@ -2,11 +2,11 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -21,8 +21,8 @@ type Config struct {
 }
 
 // Load applies changed flags > nonblank environment > TOML > defaults.
-// An empty path discovers XDG_CONFIG_HOME/ts-jev/config.toml or
-// HOME/.config/ts-jev/config.toml. Only a missing discovered file is optional.
+// An empty path selects ./jevwise.toml before the XDG/HOME global file.
+// Only a missing default global file is optional; selected files never merge.
 // Neither global Viper state nor the supplied flags are mutated.
 func Load(path string, flags *pflag.FlagSet) (Config, error) {
 	v := viper.New()
@@ -30,23 +30,17 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 	for key, value := range defaults {
 		v.SetDefault(key, value)
 	}
-	explicit := path != ""
-	if !explicit {
-		base := strings.TrimSpace(os.Getenv("XDG_CONFIG_HOME"))
-		if base == "" {
-			home, err := os.UserHomeDir()
-			if err != nil {
-				return Config{}, errors.New("cannot discover configuration: HOME is unset")
-			}
-			base = filepath.Join(home, ".config")
-		}
-		path = filepath.Join(base, "ts-jev", "config.toml")
+	path, required, err := ResolvePath(path)
+	if err != nil {
+		return Config{}, err
 	}
-	v.SetConfigFile(path)
+	data, err := ReadFile(path)
+	if err != nil && (required || !errors.Is(err, os.ErrNotExist)) {
+		return Config{}, errors.New("cannot read configuration: file missing, unreadable or unsafe")
+	}
 	v.SetConfigType("toml")
-	if err := v.ReadInConfig(); err != nil && (explicit || !errors.Is(err, os.ErrNotExist)) {
-		// Parser errors may contain file values, including credentials.
-		return Config{}, errors.New("cannot read configuration: file missing, unreadable or invalid TOML")
+	if err == nil && v.ReadConfig(bytes.NewReader(data)) != nil {
+		return Config{}, errors.New("cannot read configuration: invalid TOML")
 	}
 	upstream := map[string]string{"api_key": "TYPESAFE_API_KEY", "base_url": "TYPESAFE_BASE_URL", "model": "TYPESAFE_DEFAULT_MODEL"}
 	env := make(map[string]any)
@@ -78,7 +72,6 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 		values[key] = strings.TrimSpace(value)
 	}
 	c := Config{APIKey: values["api_key"], BaseURL: values["base_url"], Model: values["model"], Provider: values["provider"]}
-	var err error
 	c.Timeout, err = time.ParseDuration(values["timeout"])
 	if err != nil {
 		return Config{}, errors.New("timeout must be a positive duration")

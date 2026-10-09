@@ -1,0 +1,7 @@
+# Optional CLI configuration. Prefer environment credentials.
+api_key = ""
+base_url = "https://api.typesafe.ai"
+model = "jev-latest"
+provider = "jev"
+timeout = "10s"
+editor = "vim"

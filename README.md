@@ -121,6 +121,19 @@ Precedence: **changed flags > nonblank environment > TOML > defaults**.
 - Trust the current directory before running decision/MCP commands: local settings can change the upstream destination. Environment/changed flags still win. Invalid, oversized (over 1 MiB), linked or nonregular local files fail without global fallback; help/version do not load them.
 - Start with [config.example.toml](config.example.toml). Prefer environment credentials rather than command-line secrets.
 
+### Initialize and inspect
+
+```sh
+jevwise config init          # Global XDG/HOME config, even if local exists
+jevwise config init --local  # ./jevwise.toml, automatically selected in this cwd
+jevwise config view          # Selected file/defaults, API key redacted
+jevwise config view --config /path/to/config.toml
+```
+
+- Init never overwrites existing files, directories or links. It writes a template, not your environment credentials; Unix file permissions are requested as `0600`, new parent directories as `0700`. Use a trusted parent with safe ownership/ACLs: mode bits alone do not guarantee privacy, including inherited Unix ACLs. Windows users must manage ACLs separately.
+- `--config PATH` also selects an init destination; do not combine it with `--local` or pass a blank path. View ignores environment/decision flag overrides, unknown keys and comments; invalid files fail safely. It is not a dump of effective runtime settings. Only the `api_key` field is automatically redacted; do not store credentials in other displayed settings.
+- Add `jevwise.toml` to your project's ignore rules before storing credentials. Prefer environment API keys.
+
 ## Skill setup
 
 ```sh

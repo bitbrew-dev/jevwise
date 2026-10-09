@@ -55,6 +55,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	flags.String("model", "jev-latest", "Jev model")
 	flags.String("timeout", "10s", "Operation timeout, for example 10s")
 	cmd.AddCommand(newVersion())
+	cmd.AddCommand(newConfig())
 	releaseClient := update.NewClient(nil)
 	cmd.AddCommand(newUpdate(updateOps{releaseClient.Latest, releaseClient.Download, update.Replace, runtime.GOOS, runtime.GOARCH}, buildinfo.Version))
 	cmd.AddCommand(newDecide(factory))

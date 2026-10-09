@@ -17,6 +17,7 @@ import (
 
 const latestURL = "https://api.github.com/repos/bitbrew-dev/jevwise/releases/latest"
 const metadataLimit = 1 << 20
+const apiVersion = "2026-03-10"
 
 // ErrNoRelease means GitHub has no published stable release.
 var ErrNoRelease = errors.New("no published stable Jevwise release")
@@ -33,7 +34,11 @@ type Release struct {
 	Assets []Asset
 }
 
-type safeError struct{ cause error }
+type safeError struct {
+	cause  error
+	reason string
+	status int
+}
 
 func (e *safeError) Error() string { return "cannot check Jevwise release" }
 func (e *safeError) Unwrap() error { return e.cause }
@@ -62,45 +67,57 @@ func NewClient(client *http.Client) *Client {
 func (c *Client) Latest(ctx context.Context) (_ Release, resultErr error) {
 	finish := debuglog.Trace(ctx, "update.lookup")
 	defer func() { finish(resultErr) }()
-	fail := func(err error) (Release, error) {
+	status := 0
+	fail := func(reason string, err error) (Release, error) {
 		if ctx != nil && ctx.Err() != nil {
 			err = ctx.Err()
+			reason = networkReason(err)
 		}
-		return Release{}, &safeError{err}
+		debuglog.Event(ctx, "update.lookup.failed."+reason)
+		return Release{}, &safeError{cause: err, reason: reason, status: status}
 	}
 	if ctx == nil || c == nil || c.httpClient == nil {
-		return fail(errors.New("invalid release client or context"))
+		return fail("invalid_client", errors.New("invalid release client or context"))
 	}
 	if err := ctx.Err(); err != nil {
-		return fail(err)
+		return fail(networkReason(err), err)
 	}
+	debuglog.Event(ctx, "update.lookup.GET "+latestURL)
+	debuglog.Event(ctx, "update.lookup.api_version."+apiVersion)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, latestURL, nil)
 	if err != nil {
-		return fail(err)
+		return fail(networkReason(err), err)
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("X-GitHub-Api-Version", "2026-03-10")
+	req.Header.Set("X-GitHub-Api-Version", apiVersion)
 	req.Header.Set("User-Agent", "jevwise-update")
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		return fail(err)
+		return fail(networkReason(err), err)
 	}
 	defer res.Body.Close()
 	if err := ctx.Err(); err != nil {
-		return fail(err)
+		return fail(networkReason(err), err)
 	}
+	status = res.StatusCode
+	rateLimited := logHTTP(ctx, "update.lookup", res)
 	if res.StatusCode == http.StatusNotFound {
+		debuglog.Event(ctx, "update.lookup.no_public_release_or_repository")
 		return Release{}, ErrNoRelease
 	}
 	if res.StatusCode != http.StatusOK {
-		return fail(errors.New("unexpected release status"))
+		reason := "http_status"
+		if rateLimited {
+			reason = "rate_limited"
+		}
+		return fail(reason, errors.New("unexpected release status"))
 	}
 	body, err := io.ReadAll(io.LimitReader(res.Body, metadataLimit+1))
 	if err != nil {
-		return fail(err)
+		return fail("response_read", err)
 	}
 	if len(body) > metadataLimit {
-		return fail(errors.New("release metadata too large"))
+		return fail("metadata_size", errors.New("release metadata too large"))
 	}
 	var wire struct {
 		Tag        string `json:"tag_name"`
@@ -112,23 +129,23 @@ func (c *Client) Latest(ctx context.Context) (_ Release, resultErr error) {
 		} `json:"assets"`
 	}
 	if err := json.Unmarshal(body, &wire); err != nil {
-		return fail(err)
+		return fail("metadata_json", err)
 	}
 	if _, err := Compare(wire.Tag, wire.Tag); err != nil {
-		return fail(err)
+		return fail("release_tag", err)
 	}
 	if wire.Draft == nil || *wire.Draft || wire.Prerelease == nil || *wire.Prerelease {
-		return fail(errors.New("release is not explicitly stable"))
+		return fail("release_not_stable", errors.New("release is not explicitly stable"))
 	}
 	release := Release{Tag: wire.Tag, Assets: make([]Asset, 0, len(wire.Assets))}
 	for _, asset := range wire.Assets {
 		if asset.Name == nil || *asset.Name == "" || asset.Size == nil || *asset.Size < 0 {
-			return fail(errors.New("invalid release asset"))
+			return fail("asset_metadata", errors.New("invalid release asset"))
 		}
 		release.Assets = append(release.Assets, Asset{Name: *asset.Name, Size: *asset.Size})
 	}
 	if err := ctx.Err(); err != nil {
-		return fail(err)
+		return fail(networkReason(err), err)
 	}
 	return release, nil
 }

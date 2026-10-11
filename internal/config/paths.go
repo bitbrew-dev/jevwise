@@ -8,10 +8,11 @@ import (
 	"strings"
 )
 
-const LocalName = "jevwise.toml"
+const LocalName = ".jevwise.toml"
+const GlobalName = "jevwise.toml"
 const MaxFileBytes = 1 << 20
 
-// GlobalPath preserves the existing configuration namespace.
+// GlobalPath selects only the Jevwise configuration namespace.
 func GlobalPath() (string, error) {
 	base := strings.TrimSpace(os.Getenv("XDG_CONFIG_HOME"))
 	if base == "" {
@@ -21,14 +22,15 @@ func GlobalPath() (string, error) {
 		}
 		base = filepath.Join(home, ".config")
 	}
-	return filepath.Abs(filepath.Join(base, "ts-jev", "config.toml"))
+	return AbsolutePath(filepath.Join(base, "jevwise", GlobalName))
 }
 
 // ResolvePath returns the selected file and whether its presence is required.
-// Only the current directory is searched; a local file replaces the global one.
+// Only the exact hidden current-directory name is inspected.
+// A selected local file replaces the application-specific global one.
 func ResolvePath(explicit string) (string, bool, error) {
 	if explicit != "" {
-		path, err := filepath.Abs(explicit)
+		path, err := AbsolutePath(explicit)
 		return path, true, err
 	}
 	cwd, err := os.Getwd()
@@ -48,6 +50,24 @@ func ResolvePath(explicit string) (string, bool, error) {
 	}
 	path, err := GlobalPath()
 	return path, false, err
+}
+
+// AbsolutePath expands only current-user tilde paths, without shell/env evaluation.
+func AbsolutePath(path string) (string, error) {
+	if path == "~" || strings.HasPrefix(path, "~/") || filepath.Separator == '\\' && strings.HasPrefix(path, "~\\") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", errors.New("cannot expand configuration path: home is unset")
+		}
+		if path == "~" {
+			path = home
+		} else {
+			path = filepath.Join(home, path[2:])
+		}
+	} else if strings.HasPrefix(path, "~") {
+		return "", errors.New("only current-user ~/ configuration paths are supported")
+	}
+	return filepath.Abs(path)
 }
 
 // ReadFile bounds TOML input and refuses special files before opening them.

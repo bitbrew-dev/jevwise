@@ -43,8 +43,8 @@ func TestDefaultsAndDiscovery(t *testing.T) {
 	if err != nil || got != want {
 		t.Fatalf("defaults: %+v %v", got, err)
 	}
-	xdg := filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "ts-jev", "config.toml")
-	home := filepath.Join(os.Getenv("HOME"), ".config", "ts-jev", "config.toml")
+	xdg := filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "jevwise", GlobalName)
+	home := filepath.Join(os.Getenv("HOME"), ".config", "jevwise", GlobalName)
 	writeConfig(t, xdg, `model = "xdg"`)
 	writeConfig(t, home, `model = "home"`)
 	got, err = Load("", nil)
@@ -132,7 +132,7 @@ func TestInvalidFilesAndValues(t *testing.T) {
 			}
 		})
 	}
-	path := filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "ts-jev", "config.toml")
+	path := filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "jevwise", GlobalName)
 	writeConfig(t, path, "[")
 	if _, err := Load("", nil); err == nil {
 		t.Fatal("invalid discovered file accepted")

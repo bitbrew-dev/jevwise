@@ -51,12 +51,40 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 					return err
 				}
 			}
-			if err := mcpserver.ValidateToken(token); err != nil {
+			if err := mcpserver.ValidateToken(token); err != nil && (token != "" || cmd.Flags().Changed("token-file")) {
 				return errors.New("MCP bearer token is missing or invalid: set JEVWISE_MCP_TOKEN or use --token-file")
 			}
 			cfg, err := LoadConfig(cmd)
 			if err != nil {
 				return err
+			}
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			if token == "" {
+				if cfg.Provider != "jev" {
+					return initializationFailure(ctx, "provider is not implemented", service.ErrNotImplemented)
+				}
+				if cfg.APIKey == "" {
+					return initializationFailure(ctx, "cannot initialize MCP decision service", &initializationError{kind: "api_key_missing"})
+				}
+				path, err := managedTokenPath(runtimeDir)
+				if err != nil {
+					return err
+				}
+				// The default cache parent may not exist on a fresh user account.
+				// Custom runtime paths retain the existing caller-prepared-parent rule.
+				if !cmd.Flags().Changed("runtime-dir") {
+					if err := os.MkdirAll(filepath.Dir(filepath.Dir(path)), 0700); err != nil {
+						return &decisionError{"cannot prepare MCP cache directory", err}
+					}
+				}
+				debuglog.Event(ctx, "mcp.token.auto_resolve")
+				token, err = daemon.EnsureAgentToken(filepath.Dir(path))
+				if err != nil {
+					debuglog.Event(ctx, "mcp.token.auto_failed")
+					return err
+				}
 			}
 			if cfg.APIKey != "" && token == cfg.APIKey {
 				return errors.New("MCP bearer token must differ from the upstream API key")
@@ -98,7 +126,7 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 			}
 			return nil
 		}}
-	cmd.Flags().StringVar(&address, "listen", "127.0.0.1:8080", "Literal loopback IP:port for /mcp; token from JEVWISE_MCP_TOKEN")
+	cmd.Flags().StringVar(&address, "listen", "127.0.0.1:8080", "Literal loopback IP:port for /mcp")
 	cmd.Flags().BoolVar(&background, "background", false, "Start an independent MCP background process")
 	cmd.PersistentFlags().StringVar(&tokenFile, "token-file", "", "Read an owner-private bearer token file instead of JEVWISE_MCP_TOKEN")
 	cache, _ := os.UserCacheDir()
@@ -106,7 +134,7 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 		runtimeDir = filepath.Join(cache, "jevwise-mcp")
 	}
 	cmd.PersistentFlags().StringVar(&runtimeDir, "runtime-dir", runtimeDir, "Private per-user MCP background runtime directory")
-	cmd.AddCommand(newMCPManagement("status", &runtimeDir), newMCPManagement("stop", &runtimeDir))
+	cmd.AddCommand(newMCPManagement("status", &runtimeDir), newMCPManagement("stop", &runtimeDir), newMCPTokenPath(&runtimeDir))
 	return cmd
 }
 

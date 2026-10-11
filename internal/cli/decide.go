@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"strings"
 
 	"github.com/bitbrew-dev/jevwise/internal/config"
 	"github.com/bitbrew-dev/jevwise/internal/debuglog"
@@ -33,13 +34,18 @@ func defaultServiceFactory(cfg config.Config) (service.DecisionService, func(), 
 		return svc, nil, err
 	}
 	// An explicit empty CLI key must not fall back to an SDK environment key.
-	if cfg.APIKey == "" {
-		return nil, nil, errors.New("API key is required")
+	if strings.TrimSpace(cfg.APIKey) == "" {
+		return nil, nil, &initializationError{kind: "api_key_missing"}
+	}
+	for _, b := range []byte(strings.TrimSpace(cfg.APIKey)) {
+		if b < 0x21 || b > 0x7e {
+			return nil, nil, &initializationError{kind: "api_key_invalid"}
+		}
 	}
 	client, err := typesafe.NewClient(typesafe.ClientOptions{APIKey: cfg.APIKey,
 		BaseURL: cfg.BaseURL, DefaultModel: cfg.Model, Timeout: cfg.Timeout})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, &initializationError{kind: "client_configuration", cause: err}
 	}
 	svc, err := service.New("jev", func(ctx context.Context, request typesafe.SystemOneRequest) (*typesafe.SystemOneResponse, error) {
 		return client.SystemOne(ctx, request)
@@ -104,11 +110,8 @@ func newDecide(factory ServiceFactory) *cobra.Command {
 			if cleanup != nil {
 				defer cleanup()
 			}
-			if errors.Is(err, service.ErrNotImplemented) {
-				return &decisionError{"provider is not implemented", err}
-			}
-			if err != nil || svc == nil {
-				return &decisionError{"cannot initialize decision service", err}
+			if err != nil || !initializedMCPService(svc) {
+				return initializationFailure(ctx, "cannot initialize decision service", err)
 			}
 			if err := ctx.Err(); err != nil {
 				return err

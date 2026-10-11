@@ -72,11 +72,8 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 			if cleanup != nil {
 				defer cleanup()
 			}
-			if errors.Is(err, service.ErrNotImplemented) {
-				return &decisionError{"provider is not implemented", err}
-			}
-			if err != nil || svc == nil {
-				return &decisionError{"cannot initialize MCP decision service", err}
+			if err != nil || !initializedMCPService(svc) {
+				return initializationFailure(ctx, "cannot initialize MCP decision service", err)
 			}
 			if err := ctx.Err(); err != nil {
 				return err

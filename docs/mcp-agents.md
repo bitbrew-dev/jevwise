@@ -11,17 +11,15 @@ The commands below use the renamed checkout CLI, `jevwise`; published releases t
 Prerequisites:
 
 - Install/build `jevwise` and configure the Jev provider using the [installation guide](../README.md#installation) and [configuration guide](configuration.md).
-- Prepare a random, separate agent bearer token in a protected current-user-only file. Follow the [token and runtime permissions](mcp.md#credentials-state-and-safety), including Windows ACL requirements.
-- Replace the example token-file path below with your own existing protected file. Do not reuse your upstream API key or the runtime management key.
+- The current checkout creates/reuses a separate protected `agent.token` when no environment token or `--token-file` override is supplied. Follow the [token and runtime permissions](mcp.md#credentials-state-and-safety). Never reuse your API key or management key.
 
 ```sh
 # macOS/Linux shell; use jevwise.exe on Windows.
-jevwise mcp --background --token-file /absolute/path/to/protected/agent-token \
-  --listen 127.0.0.1:8080
+jevwise mcp --background --listen 127.0.0.1:8080
 jevwise mcp status
 ```
 
-Foreground mode omits `--background`. Keep its terminal open; Ctrl+C stops it. If you set `--runtime-dir`, use the same directory for start, status and stop.
+Foreground mode omits `--background`. Keep its terminal open; Ctrl+C stops it. If you set `--runtime-dir`, use the same directory for start, status, stop and `token-path`.
 
 ## 2. Load only the agent token in a separate client terminal
 
@@ -30,7 +28,7 @@ The agent needs the agent bearer token, **not** the Jev API key or management ke
 macOS/Linux Bash or Zsh (remove the supported final LF/CRLF):
 
 ```sh
-export JEVWISE_MCP_TOKEN_FILE=/absolute/path/to/protected/agent-token
+export JEVWISE_MCP_TOKEN_FILE="$(jevwise mcp token-path)"
 JEVWISE_MCP_TOKEN="$(cat "$JEVWISE_MCP_TOKEN_FILE")"
 export JEVWISE_MCP_TOKEN="${JEVWISE_MCP_TOKEN%$'\r'}"
 ```
@@ -38,9 +36,11 @@ export JEVWISE_MCP_TOKEN="${JEVWISE_MCP_TOKEN%$'\r'}"
 Windows PowerShell, using your protected token file:
 
 ```powershell
-$env:JEVWISE_MCP_TOKEN_FILE = 'C:\private\agent-token'
+$env:JEVWISE_MCP_TOKEN_FILE = (jevwise mcp token-path)
 $env:JEVWISE_MCP_TOKEN = (Get-Content -Raw -LiteralPath $env:JEVWISE_MCP_TOKEN_FILE) -replace '\r?\n$', ''
 ```
+
+These examples use the automatic file after successful startup. With an explicit token override, load that token instead: `token-path` always reports the automatic path, not the active override.
 
 Clients read the token from their process environment. Launch the client from this terminal; an already-running desktop app may not inherit it. Reopen the client after token changes. If an existing client server is already named `jevwise`, inspect it before adding or replacing configuration.
 

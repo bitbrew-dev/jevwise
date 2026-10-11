@@ -243,7 +243,6 @@ func TestMCPActualBackgroundCLIStartStatusDuplicateAndStop(t *testing.T) {
 	marker := filepath.Join(t.TempDir(), "background-cli-exited")
 	processEnvironment(t, marker)
 	decisionEnvironment(t)
-	t.Setenv("JEVWISE_MCP_TOKEN", fixture.AgentToken)
 	t.Setenv("JEV_API_KEY", fixture.Config.APIKey)
 	configPath := filepath.Join(t.TempDir(), "empty.toml")
 	if err := os.WriteFile(configPath, nil, 0600); err != nil {
@@ -251,6 +250,11 @@ func TestMCPActualBackgroundCLIStartStatusDuplicateAndStop(t *testing.T) {
 	}
 	var captured daemon.Bootstrap
 	var started, parentCreated int
+	runtimeStopped := func() bool {
+		entries, err := os.ReadDir(fixture.RuntimeDir)
+		token, tokenErr := daemon.ReadAgentToken(filepath.Join(fixture.RuntimeDir, daemon.AgentTokenName))
+		return err == nil && tokenErr == nil && len(entries) == 1 && entries[0].Name() == daemon.AgentTokenName && token == captured.AgentToken
+	}
 	factory := func(config.Config) (service.DecisionService, func(), error) {
 		parentCreated++
 		return nil, nil, errors.New("parent must not initialize a background service")
@@ -272,7 +276,7 @@ func TestMCPActualBackgroundCLIStartStatusDuplicateAndStop(t *testing.T) {
 			defer cancel()
 			_, _ = controller.Stop(ctx)
 		}
-		waitProcessCondition(t, func() bool { return processExited(marker) && runtimeEmpty(fixture.RuntimeDir) }, "background CLI child survived cleanup")
+		waitProcessCondition(t, func() bool { return processExited(marker) && runtimeStopped() }, "background CLI child survived cleanup")
 	})
 	execute := func(args ...string) (string, error) {
 		root := NewRootWithFactory(factory)
@@ -319,5 +323,5 @@ func TestMCPActualBackgroundCLIStartStatusDuplicateAndStop(t *testing.T) {
 	if err != nil || output != "MCP background stop acknowledged\n" || parentCreated != 0 {
 		t.Fatal("stop loaded service config or initialized a parent service", err)
 	}
-	waitProcessCondition(t, func() bool { return processExited(marker) && runtimeEmpty(fixture.RuntimeDir) }, "background CLI stop did not release runtime ownership")
+	waitProcessCondition(t, func() bool { return processExited(marker) && runtimeStopped() }, "background CLI stop did not release runtime ownership")
 }

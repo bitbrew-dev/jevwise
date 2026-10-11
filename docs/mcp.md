@@ -14,12 +14,13 @@ The examples below describe the current checkout, using synthetic paths and addr
 
 ### Start and manage
 
-Configure upstream credentials as for `jevwise decide`. Separately prepare a random agent bearer token in a protected, current-user-only file. Do not reuse your API key.
+Configure upstream credentials as for `jevwise decide`. With no token override, the current checkout generates and privately stores a separate random agent bearer token. Do not reuse your API key.
 
 ```sh
-# Synthetic examples: supply your own protected token file before running.
-jevwise mcp --token-file /private/example/agent-token --listen 127.0.0.1:8080
-jevwise mcp --background --token-file /private/example/agent-token
+# Requires your upstream API key; the local token is managed automatically.
+jevwise mcp --listen 127.0.0.1:8080
+jevwise mcp --background
+jevwise mcp token-path
 jevwise mcp status
 jevwise mcp stop
 ```
@@ -29,12 +30,15 @@ jevwise mcp stop
 | `jevwise mcp` | Foreground server; prints the public `/mcp` endpoint after startup. Ctrl+C stops it. |
 | `--background` | Starts a terminal-independent child after authenticated readiness and ownership checks. |
 | `jevwise mcp status` | Authenticates the exact instance and reports its startup/running state. v1.2.0 and newer also show the recorded PID when available. |
+| `jevwise mcp token-path` | Prints only the automatic token path; does not read credentials, create files or report explicit overrides. |
 | `jevwise mcp stop` | Authenticates the exact instance and requests shutdown; an acknowledgement is not a promise that cleanup has already finished. |
 | `--listen` | Literal loopback IP and nonzero port; default `127.0.0.1:8080`. |
 | `--runtime-dir` | Private background state directory; default `os.UserCacheDir()/jevwise-mcp`. Use the same override for start, status and stop. |
 | `--token-file` | Explicit protected agent-token file, overriding `JEVWISE_MCP_TOKEN`; unreadable or unsafe files fail without fallback. |
 
-- Without `--token-file`, startup reads `JEVWISE_MCP_TOKEN`, then compatibility aliases `JEVWISE_MCP_AUTH_TOKEN` and `JEV_MCP_TOKEN`, skipping only empty values. An invalid nonempty higher-priority value fails without fallback. Tokens must be nonempty printable ASCII without whitespace; a file may end in one LF or CRLF. No secret-valued token flag exists.
+- Without `--token-file`, startup reads `JEVWISE_MCP_TOKEN`, then compatibility aliases `JEVWISE_MCP_AUTH_TOKEN` and `JEV_MCP_TOKEN`, skipping only empty values. When every environment name is empty, startup creates/reuses `<runtime-dir>/agent.token`. An invalid nonempty higher-priority value fails without fallback. Tokens must be nonempty printable ASCII without whitespace; a file may end in one LF or CRLF. No secret-valued token flag exists.
+- The automatic file contains 256 random bits encoded as 64 hexadecimal characters. Unix storage uses a private `0700` directory and `0600` file; Windows uses protected current-user-only DACLs. Unsafe existing directories/files and links are refused, never repaired or replaced. Stale initialization locks/staging files block first token creation; a valid saved token can be reused while a background instance holds its lock. Publication requires hard-link support; concurrent first-start attempts may need retrying.
+- Stopping MCP preserves the automatic token. Cache/runtime deletion removes it. To rotate it, stop all servers using that runtime directory, remove only `agent.token`, restart, and reload the new token in clients. Use the same `--runtime-dir` with `token-path`; custom runtime parents must already exist and be trusted. Stop an existing server before switching between automatic and explicit token modes.
 - Keep credentials out of command arguments and shell history. Use protected files or appropriately secured environment configuration instead of `--api-key`.
 - `status` and `stop` do not load decision configuration, API keys, the decision service or the agent token file. They use the private runtime management key, with no upstream API request.
 - Background mode does not install a login item, reboot service or automatic restart. On Windows, a restrictive parent Job Object can prevent detachment or terminate the child when its parent exits.
@@ -61,7 +65,7 @@ Connect an HTTP-capable local agent to `http://127.0.0.1:8080/mcp`, supplying `A
 | Credential | Purpose | Where it belongs |
 | --- | --- | --- |
 | Upstream API key | Server-to-Jev decisions | Existing decision configuration; never give it to the agent. |
-| Agent bearer token | Agent-to-local `/mcp` access | `JEVWISE_MCP_TOKEN` or an explicit protected token file. |
+| Agent bearer token | Agent-to-local `/mcp` access | Automatic private `agent.token`, `JEVWISE_MCP_TOKEN`, or an explicit protected token file. |
 | Management key | Status/stop and instance verification | Separate private runtime file; never give it to the agent or transmit it as a bearer token. |
 
 - Background bootstrap passes secrets through owned anonymous pipes, not child arguments, public state or logs. State contains bounded instance metadata, never credentials; the post-v1.1.0 checkout also records an inspection-only PID. Agent and API credentials must differ; the management key is separately generated.

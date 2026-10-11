@@ -48,7 +48,7 @@ func newConfig() *cobra.Command {
 			} else if path == "" {
 				path, err = config.GlobalPath()
 			} else {
-				path, err = filepath.Abs(path)
+				path, err = config.AbsolutePath(path)
 			}
 			if err != nil {
 				return errors.New("cannot determine configuration path")
@@ -66,7 +66,7 @@ func newConfig() *cobra.Command {
 			}
 			return nil
 		}}
-	init.Flags().BoolVar(&local, "local", false, "Create ./jevwise.toml instead of global configuration")
+	init.Flags().BoolVar(&local, "local", false, "Create ./.jevwise.toml instead of global configuration")
 	view := &cobra.Command{Use: "view", Short: "Show file settings with API key redacted (ignores environment)", Args: configNoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := cmd.Context().Err(); err != nil {

@@ -21,7 +21,7 @@ type Config struct {
 }
 
 // Load applies changed flags > nonblank environment > TOML > defaults.
-// An empty path selects ./jevwise.toml before the XDG/HOME global file.
+// An empty path selects ./.jevwise.toml, then the Jevwise global file.
 // Only a missing default global file is optional; selected files never merge.
 // TOML API keys expand $NAME/${NAME}; environment and flag keys stay literal.
 // Neither global Viper state nor the supplied flags are mutated.
@@ -39,6 +39,7 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 	if err != nil && (required || !errors.Is(err, os.ErrNotExist)) {
 		return Config{}, errors.New("cannot read configuration: file missing, unreadable or unsafe")
 	}
+	// Parse only these selected bytes. Never use Viper search paths or ReadInConfig.
 	v.SetConfigType("toml")
 	if err == nil && v.ReadConfig(bytes.NewReader(data)) != nil {
 		return Config{}, errors.New("cannot read configuration: invalid TOML")

@@ -16,7 +16,7 @@ bin/jevwise decide --help
 
 Help does not read credentials, configuration files, or contact the API.
 
-The current checkout uses `jevwise`; releases through v1.2.0 used `jev`. There is no `jev` alias. Existing configuration and the `jev` provider remain unchanged. Verify ownership before removing an older binary; another project may own the `jev` command.
+The current checkout uses `jevwise`; releases through v1.2.0 used `jev`. There is no `jev` alias. The `jev` provider is unchanged; see the [configuration guide](configuration.md) for the current file locations. Verify ownership before removing an older binary; another project may own the `jev` command.
 
 ## Version and platform builds
 

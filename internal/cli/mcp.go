@@ -40,7 +40,7 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 			if err != nil {
 				return err
 			}
-			token := os.Getenv("JEV_MCP_TOKEN")
+			token := mcpEnvironmentToken()
 			if cmd.Flags().Changed("token-file") {
 				path, err := filepath.Abs(tokenFile)
 				if err != nil || tokenFile == "" {
@@ -52,7 +52,7 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 				}
 			}
 			if err := mcpserver.ValidateToken(token); err != nil {
-				return errors.New("JEV_MCP_TOKEN must contain a valid MCP bearer token")
+				return errors.New("MCP bearer token is missing or invalid: set JEVWISE_MCP_TOKEN or use --token-file")
 			}
 			cfg, err := LoadConfig(cmd)
 			if err != nil {
@@ -98,9 +98,9 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 			}
 			return nil
 		}}
-	cmd.Flags().StringVar(&address, "listen", "127.0.0.1:8080", "Literal loopback IP:port for /mcp; token from JEV_MCP_TOKEN")
+	cmd.Flags().StringVar(&address, "listen", "127.0.0.1:8080", "Literal loopback IP:port for /mcp; token from JEVWISE_MCP_TOKEN")
 	cmd.Flags().BoolVar(&background, "background", false, "Start an independent MCP background process")
-	cmd.PersistentFlags().StringVar(&tokenFile, "token-file", "", "Read an owner-private bearer token file instead of JEV_MCP_TOKEN")
+	cmd.PersistentFlags().StringVar(&tokenFile, "token-file", "", "Read an owner-private bearer token file instead of JEVWISE_MCP_TOKEN")
 	cache, _ := os.UserCacheDir()
 	if cache != "" {
 		runtimeDir = filepath.Join(cache, "jevwise-mcp")
@@ -108,4 +108,15 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 	cmd.PersistentFlags().StringVar(&runtimeDir, "runtime-dir", runtimeDir, "Private per-user MCP background runtime directory")
 	cmd.AddCommand(newMCPManagement("status", &runtimeDir), newMCPManagement("stop", &runtimeDir))
 	return cmd
+}
+
+// Canonical token wins over compatibility aliases. A nonempty invalid token
+// must fail validation, not silently authenticate using a lower-priority value.
+func mcpEnvironmentToken() string {
+	for _, name := range []string{"JEVWISE_MCP_TOKEN", "JEVWISE_MCP_AUTH_TOKEN", "JEV_MCP_TOKEN"} {
+		if token := os.Getenv(name); token != "" {
+			return token
+		}
+	}
+	return ""
 }

@@ -105,7 +105,7 @@ func TestRealAgentMCPDiscovery(t *testing.T) {
 				"USERPROFILE=" + home, "CODEX_HOME=" + filepath.Join(home, "codex"), "CLAUDE_CONFIG_DIR=" + filepath.Join(home, "claude"),
 				"XDG_CONFIG_HOME=" + filepath.Join(home, "config"), "XDG_CACHE_HOME=" + filepath.Join(home, "cache"),
 				"XDG_DATA_HOME=" + filepath.Join(home, "data"), "TMPDIR=" + filepath.Join(home, "tmp"), "TEMP=" + filepath.Join(home, "tmp"),
-				"JEV_MCP_TOKEN=" + token, "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1", "DISABLE_AUTOUPDATER=1",
+				"JEVWISE_MCP_TOKEN=" + token, "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1", "DISABLE_AUTOUPDATER=1",
 				"DISABLE_TELEMETRY=1", "DISABLE_ERROR_REPORTING=1", "NO_COLOR=1"}
 			command := func(args ...string) *exec.Cmd {
 				cmd := exec.CommandContext(ctx, binary, args...)
@@ -126,7 +126,7 @@ wire_api = "responses"
 requires_openai_auth = false
 [mcp_servers.jevwise]
 url = %q
-bearer_token_env_var = "JEV_MCP_TOKEN"
+bearer_token_env_var = "JEVWISE_MCP_TOKEN"
 startup_timeout_sec = 10
 `, upstream.URL, endpoint)
 				if os.WriteFile(filepath.Join(home, "codex", "config.toml"), []byte(configuration), 0600) != nil {
@@ -134,7 +134,7 @@ startup_timeout_sec = 10
 				}
 				smokeCodex(t, ctx, command("app-server", "--listen", "stdio://"))
 			} else {
-				configuration := fmt.Sprintf(`{"type":"http","url":%q,"headers":{"Authorization":"Bearer ${JEV_MCP_TOKEN}"}}`, endpoint)
+				configuration := fmt.Sprintf(`{"type":"http","url":%q,"headers":{"Authorization":"Bearer ${JEVWISE_MCP_TOKEN}"}}`, endpoint)
 				for _, args := range [][]string{{"--bare", "mcp", "add-json", "--scope", "local", "jevwise", configuration},
 					{"--bare", "mcp", "get", "jevwise"}, {"--bare", "mcp", "list"}} {
 					var output smokeOutput

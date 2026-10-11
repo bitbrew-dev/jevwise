@@ -7,7 +7,7 @@ The examples assume `jevwise` is installed on PATH. For a source build, use `bin
 ## Decisions
 
 ```sh
-export TYPESAFE_API_KEY='<your-key>'
+export JEV_API_KEY='<your-key>'
 jevwise decide --prompt 'Which task should I tackle first?' \
   --option 'Fix the bug' --option 'Write documentation'
 

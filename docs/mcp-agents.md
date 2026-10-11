@@ -25,21 +25,21 @@ Foreground mode omits `--background`. Keep its terminal open; Ctrl+C stops it. I
 
 ## 2. Load only the agent token in a separate client terminal
 
-The agent needs the agent bearer token, **not** the Jev API key or management key. Use a fresh client terminal without `TYPESAFE_API_KEY` or `TS_JEV_API_KEY`. Do not paste token values into client commands, configuration files or chat.
+The agent needs the agent bearer token, **not** the Jev API key or management key. Use a fresh client terminal without upstream credentials (`JEV_API_KEY`, `JEVWISE_API_KEY`, `TS_JEV_API_KEY`, `TYPESAFE_API_KEY`, or any custom API-key variable). Do not paste token values into client commands, configuration files or chat.
 
 macOS/Linux Bash or Zsh (remove the supported final LF/CRLF):
 
 ```sh
-export JEV_MCP_TOKEN_FILE=/absolute/path/to/protected/agent-token
-JEV_MCP_TOKEN="$(cat "$JEV_MCP_TOKEN_FILE")"
-export JEV_MCP_TOKEN="${JEV_MCP_TOKEN%$'\r'}"
+export JEVWISE_MCP_TOKEN_FILE=/absolute/path/to/protected/agent-token
+JEVWISE_MCP_TOKEN="$(cat "$JEVWISE_MCP_TOKEN_FILE")"
+export JEVWISE_MCP_TOKEN="${JEVWISE_MCP_TOKEN%$'\r'}"
 ```
 
 Windows PowerShell, using your protected token file:
 
 ```powershell
-$env:JEV_MCP_TOKEN_FILE = 'C:\private\agent-token'
-$env:JEV_MCP_TOKEN = (Get-Content -Raw -LiteralPath $env:JEV_MCP_TOKEN_FILE) -replace '\r?\n$', ''
+$env:JEVWISE_MCP_TOKEN_FILE = 'C:\private\agent-token'
+$env:JEVWISE_MCP_TOKEN = (Get-Content -Raw -LiteralPath $env:JEVWISE_MCP_TOKEN_FILE) -replace '\r?\n$', ''
 ```
 
 Clients read the token from their process environment. Launch the client from this terminal; an already-running desktop app may not inherit it. Reopen the client after token changes. If an existing client server is already named `jevwise`, inspect it before adding or replacing configuration.
@@ -52,7 +52,7 @@ Register the HTTP endpoint, storing the **environment variable name**, not its v
 
 ```sh
 codex mcp add jevwise --url http://127.0.0.1:8080/mcp \
-  --bearer-token-env-var JEV_MCP_TOKEN
+  --bearer-token-env-var JEVWISE_MCP_TOKEN
 codex mcp get jevwise
 ```
 
@@ -61,7 +61,7 @@ Alternatively, merge this entry into your existing Codex `config.toml`, rather t
 ```toml
 [mcp_servers.jevwise]
 url = "http://127.0.0.1:8080/mcp"
-bearer_token_env_var = "JEV_MCP_TOKEN"
+bearer_token_env_var = "JEVWISE_MCP_TOKEN"
 ```
 
 `codex mcp get`/`list` inspect configuration, not a successful live handshake. Start Codex from the token-bearing terminal and use `/mcp` to check that `jevwise` is connected and advertises `decide`. Do not request a decision just to check connectivity.
@@ -70,12 +70,12 @@ Configuration location, project trust and available options are described in the
 
 ### Claude Code
 
-In the project where you use Claude Code, add a local-scoped HTTP entry. The single quotes below preserve `${JEV_MCP_TOKEN}` as a literal environment reference, keeping the token out of command arguments and stored configuration:
+In the project where you use Claude Code, add a local-scoped HTTP entry. The single quotes below preserve `${JEVWISE_MCP_TOKEN}` as a literal environment reference, keeping the token out of command arguments and stored configuration:
 
 ```sh
 # macOS/Linux shell
 claude mcp add-json --scope local jevwise \
-  '{"type":"http","url":"http://127.0.0.1:8080/mcp","headers":{"Authorization":"Bearer ${JEV_MCP_TOKEN}"}}'
+  '{"type":"http","url":"http://127.0.0.1:8080/mcp","headers":{"Authorization":"Bearer ${JEVWISE_MCP_TOKEN}"}}'
 claude mcp get jevwise
 ```
 
@@ -87,7 +87,7 @@ For a project-scoped setup, merge the following entry into `.mcp.json` without r
     "jevwise": {
       "type": "http",
       "url": "http://127.0.0.1:8080/mcp",
-      "headers": {"Authorization": "Bearer ${JEV_MCP_TOKEN}"}
+      "headers": {"Authorization": "Bearer ${JEVWISE_MCP_TOKEN}"}
     }
   }
 }
@@ -131,4 +131,4 @@ JEVWISE_MCP_AGENT_SMOKE=1 go test -mod=readonly -run '^TestRealAgentMCPDiscovery
 
 Stop with `jevwise mcp stop` using the same runtime directory. Acknowledgement is not a guarantee cleanup has already finished. Stop/restart after executable or credential changes. Use the matching/newer CLI for schema-2 instances.
 
-Remove only the client entry you added: `codex mcp remove jevwise`, or `claude mcp remove jevwise --scope local` for the local-scoped example. For project JSON, remove only that entry. Removing client configuration does not stop Jevwise. Clear `JEV_MCP_TOKEN` from the client terminal when finished.
+Remove only the client entry you added: `codex mcp remove jevwise`, or `claude mcp remove jevwise --scope local` for the local-scoped example. For project JSON, remove only that entry. Removing client configuration does not stop Jevwise. Clear `JEVWISE_MCP_TOKEN` from the client terminal when finished.

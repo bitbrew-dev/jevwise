@@ -32,9 +32,9 @@ jevwise mcp stop
 | `jevwise mcp stop` | Authenticates the exact instance and requests shutdown; an acknowledgement is not a promise that cleanup has already finished. |
 | `--listen` | Literal loopback IP and nonzero port; default `127.0.0.1:8080`. |
 | `--runtime-dir` | Private background state directory; default `os.UserCacheDir()/jevwise-mcp`. Use the same override for start, status and stop. |
-| `--token-file` | Explicit protected agent-token file, overriding `JEV_MCP_TOKEN`; unreadable or unsafe files fail without fallback. |
+| `--token-file` | Explicit protected agent-token file, overriding `JEVWISE_MCP_TOKEN`; unreadable or unsafe files fail without fallback. |
 
-- Without `--token-file`, startup reads `JEV_MCP_TOKEN`. Tokens must be nonempty printable ASCII without whitespace; a file may end in one LF or CRLF. No secret-valued token flag exists.
+- Without `--token-file`, startup reads `JEVWISE_MCP_TOKEN`, then compatibility aliases `JEVWISE_MCP_AUTH_TOKEN` and `JEV_MCP_TOKEN`, skipping only empty values. An invalid nonempty higher-priority value fails without fallback. Tokens must be nonempty printable ASCII without whitespace; a file may end in one LF or CRLF. No secret-valued token flag exists.
 - Keep credentials out of command arguments and shell history. Use protected files or appropriately secured environment configuration instead of `--api-key`.
 - `status` and `stop` do not load decision configuration, API keys, the decision service or the agent token file. They use the private runtime management key, with no upstream API request.
 - Background mode does not install a login item, reboot service or automatic restart. On Windows, a restrictive parent Job Object can prevent detachment or terminate the child when its parent exits.
@@ -61,7 +61,7 @@ Connect an HTTP-capable local agent to `http://127.0.0.1:8080/mcp`, supplying `A
 | Credential | Purpose | Where it belongs |
 | --- | --- | --- |
 | Upstream API key | Server-to-Jev decisions | Existing decision configuration; never give it to the agent. |
-| Agent bearer token | Agent-to-local `/mcp` access | `JEV_MCP_TOKEN` or an explicit protected token file. |
+| Agent bearer token | Agent-to-local `/mcp` access | `JEVWISE_MCP_TOKEN` or an explicit protected token file. |
 | Management key | Status/stop and instance verification | Separate private runtime file; never give it to the agent or transmit it as a bearer token. |
 
 - Background bootstrap passes secrets through owned anonymous pipes, not child arguments, public state or logs. State contains bounded instance metadata, never credentials; the post-v1.1.0 checkout also records an inspection-only PID. Agent and API credentials must differ; the management key is separately generated.

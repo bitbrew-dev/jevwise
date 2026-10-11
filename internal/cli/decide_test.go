@@ -26,7 +26,7 @@ func (f decideFunc) Decide(ctx context.Context, req service.Request) (service.Re
 func decisionEnvironment(t *testing.T) {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	for _, key := range []string{"TS_JEV_API_KEY", "TS_JEV_MODEL", "TS_JEV_PROVIDER", "TS_JEV_BASE_URL", "TS_JEV_TIMEOUT", "TYPESAFE_API_KEY", "TYPESAFE_DEFAULT_MODEL", "TYPESAFE_BASE_URL"} {
+	for _, key := range []string{"JEV_API_KEY", "JEVWISE_API_KEY", "JEVWISE_MCP_TOKEN", "JEVWISE_MCP_AUTH_TOKEN", "JEV_MCP_TOKEN", "TS_JEV_API_KEY", "TS_JEV_MODEL", "TS_JEV_PROVIDER", "TS_JEV_BASE_URL", "TS_JEV_TIMEOUT", "TYPESAFE_API_KEY", "TYPESAFE_DEFAULT_MODEL", "TYPESAFE_BASE_URL"} {
 		t.Setenv(key, "")
 	}
 }

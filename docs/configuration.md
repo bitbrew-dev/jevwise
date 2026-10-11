@@ -4,11 +4,11 @@
 
 ## CLI configuration
 
-Precedence: **changed flags > nonblank environment > TOML > defaults**.
+Precedence: **changed flags > nonblank environment > TOML > defaults**. These names apply to the CLI; the standalone Go SDK retains its `TYPESAFE_API_KEY` fallback.
 
 | Setting | Flag | Environment | Default |
 | --- | --- | --- | --- |
-| API key | `--api-key` | `TS_JEV_API_KEY`, then `TYPESAFE_API_KEY` | Required for Jev |
+| API key | `--api-key` | `JEV_API_KEY`; aliases: `JEVWISE_API_KEY`, `TS_JEV_API_KEY`, `TYPESAFE_API_KEY` | Required for Jev |
 | Base URL | `--base-url` | `TS_JEV_BASE_URL`, then `TYPESAFE_BASE_URL` | `https://api.typesafe.ai` |
 | Model | `--model` | `TS_JEV_MODEL`, then `TYPESAFE_DEFAULT_MODEL` | `jev-latest` |
 | Provider | `--provider` | `TS_JEV_PROVIDER` | `jev` |
@@ -20,6 +20,8 @@ Precedence: **changed flags > nonblank environment > TOML > defaults**.
 - Quoted `--config "~/.config/jevwise/jevwise.toml"` paths expand the current user's home directory for init, view, edit and runtime loading. `~otheruser` and shell/environment evaluation of paths are not supported. An XDG path beginning with `~/` is supported too.
 - Trust the current directory before running decision/MCP commands: local settings can change the upstream destination. Environment/changed flags still win. Invalid, oversized (over 1 MiB), linked or nonregular local files fail without global fallback; help/version do not load them.
 - Start with [config.example.toml](../config.example.toml). Prefer environment credentials rather than command-line secrets.
+- TOML `api_key` supports `$NAME`/`${NAME}`, for example `api_key = "$JEV_API_KEY"` or `api_key = "${JEV_MCP_API_KEY}"`. Runtime loading expands references and trims the result; undefined variables become empty.
+- API environment names above are checked left to right, skipping blank values. `JEV_API_KEY` is for the upstream API; `JEVWISE_MCP_TOKEN` is separate local MCP authentication. Never reuse the same credential.
 - TOML `api_key` supports `$NAME`/`${NAME}`, for example `api_key = "${MY_JEV_KEY}"`. Runtime loading expands references and trims the result; undefined variables become empty.
 - Custom environment names work through TOML references, for example `api_key = "${JEV_MCP_API_KEY}"`. Export the variable in the process environment before starting Jevwise. Exporting `JEV_MCP_API_KEY` alone is not an automatic API-key override; nonblank `TS_JEV_API_KEY`/`TYPESAFE_API_KEY` still take precedence over the file.
 - Local discovery never loads `config.toml`, `configs.toml`, YAML files or ancestor configs. Only `.jevwise.toml` is a local candidate; visible `jevwise.toml` is not auto-loaded. Legacy `ts-jev/config.toml` is no longer discovered: migrate manually or select it with `--config`. An explicit `--config PATH` can still select another trusted filename.

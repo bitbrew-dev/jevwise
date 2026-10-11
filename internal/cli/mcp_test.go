@@ -47,7 +47,7 @@ func TestMCPHelpIsLazyAndRegistered(t *testing.T) {
 	}
 	for _, args := range [][]string{{"mcp", "--help", "--config", "/nonexistent"}, {"help", "mcp"}} {
 		out, stderr, err := execute(NewRootWithFactory(factory), args...)
-		if err != nil || stderr != "" || !strings.Contains(out, "--listen") || !strings.Contains(out, "JEV_MCP_TOKEN") {
+		if err != nil || stderr != "" || !strings.Contains(out, "--listen") || !strings.Contains(out, "JEVWISE_MCP_TOKEN") {
 			t.Fatal("MCP help failed", err)
 		}
 	}

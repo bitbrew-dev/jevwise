@@ -50,6 +50,36 @@ Download a binary and `SHA256SUMS` from [GitHub Releases](https://github.com/bit
 - Checksums detect corruption, not a compromised publisher. See [release assets and verification](docs/releases.md) for details.
 - Prefer building from source? Follow the [development guide](docs/development.md#build-from-source).
 
+## Authentication
+
+Supply credentials through a secured environment or protected files, not secret-valued command-line arguments. These names describe the current checkout.
+
+| Default environment variable | Purpose |
+| --- | --- |
+| `JEV_API_KEY` | Upstream Jev API access for decisions and the MCP server's backend |
+| `JEVWISE_MCP_TOKEN` | Agent authentication to the local MCP server; not an upstream API key |
+
+### Upstream API key
+
+Set `JEV_API_KEY` in your secured environment, or reference **any exported variable** in your selected TOML configuration:
+
+```toml
+api_key = "$ABCD_TOKEN"
+# Equivalent: api_key = "${ABCD_TOKEN}"
+```
+
+- `ABCD_TOKEN` is only an example; custom names such as `JEV_MCP_API_KEY` also work. Export the referenced variable before starting Jevwise.
+- Only TOML `api_key` expands environment references. Unset variables expand to empty; Jev service initialization requires a nonblank key.
+- Changed `--api-key` flags override nonblank API environment values, which override TOML. Direct environment and flag values stay literal.
+- API fallback names, in order: `JEVWISE_API_KEY`, `TS_JEV_API_KEY`, `TYPESAFE_API_KEY`. The standalone Go SDK retains `TYPESAFE_API_KEY` as its environment fallback. See [configuration](docs/configuration.md).
+
+### Local MCP authentication
+
+- Use a separate bearer token: **never reuse the upstream API key or give it to the agent**.
+- Set `JEVWISE_MCP_TOKEN`, or use `jevwise mcp --token-file /path/to/protected/agent-token`. The protected file overrides environment tokens.
+- MCP fallback names, in order: `JEVWISE_MCP_AUTH_TOKEN`, `JEV_MCP_TOKEN`. Invalid nonempty tokens fail without fallback; tokens must be printable ASCII without whitespace.
+- Keep secrets out of shell history, logs and stored agent configuration. Follow [local MCP setup](docs/mcp.md) and [agent onboarding](docs/mcp-agents.md) for protected files and client environment references.
+
 ## Documentation
 
 | Guide | Contents |

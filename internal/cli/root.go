@@ -53,7 +53,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	flags.Bool("verbose", false, "Alias for --debug: write safe structured debug logs to stderr")
 	flags.String("config", "", "Path to TOML configuration")
 	flags.String("provider", "jev", "Decision provider: jev, codex or claude")
-	flags.String("api-key", "", "Jev API key (prefer environment or config)")
+	flags.String("api-key", "", "Jev API key (prefer JEV_API_KEY or config)")
 	flags.String("base-url", "https://api.typesafe.ai", "Jev API base URL")
 	flags.String("model", "jev-latest", "Jev model")
 	flags.String("timeout", "10s", "Operation timeout, for example 10s")

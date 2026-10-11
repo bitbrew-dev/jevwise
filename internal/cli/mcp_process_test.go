@@ -242,8 +242,9 @@ func TestMCPActualBackgroundCLIStartStatusDuplicateAndStop(t *testing.T) {
 	fixture := childBootstrap(t)
 	marker := filepath.Join(t.TempDir(), "background-cli-exited")
 	processEnvironment(t, marker)
-	t.Setenv("JEV_MCP_TOKEN", fixture.AgentToken)
-	t.Setenv("TS_JEV_API_KEY", fixture.Config.APIKey)
+	decisionEnvironment(t)
+	t.Setenv("JEVWISE_MCP_TOKEN", fixture.AgentToken)
+	t.Setenv("JEV_API_KEY", fixture.Config.APIKey)
 	configPath := filepath.Join(t.TempDir(), "empty.toml")
 	if err := os.WriteFile(configPath, nil, 0600); err != nil {
 		t.Fatal(err)

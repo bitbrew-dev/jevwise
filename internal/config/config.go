@@ -47,7 +47,11 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 	upstream := map[string]string{"api_key": "TYPESAFE_API_KEY", "base_url": "TYPESAFE_BASE_URL", "model": "TYPESAFE_DEFAULT_MODEL"}
 	env := make(map[string]any)
 	for key := range defaults {
-		for _, name := range []string{"TS_JEV_" + strings.ToUpper(key), upstream[key]} {
+		names := []string{"TS_JEV_" + strings.ToUpper(key), upstream[key]}
+		if key == "api_key" {
+			names = []string{"JEV_API_KEY", "JEVWISE_API_KEY", "TS_JEV_API_KEY", "TYPESAFE_API_KEY"}
+		}
+		for _, name := range names {
 			if value := strings.TrimSpace(os.Getenv(name)); value != "" {
 				env[key] = value
 				break

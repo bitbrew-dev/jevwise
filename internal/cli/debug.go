@@ -14,7 +14,7 @@ func instrumentCommands(cmd *cobra.Command) {
 		cmd.RunE = func(cmd *cobra.Command, args []string) (err error) {
 			previous := cmd.Context()
 			var writer io.Writer
-			if enabled, _ := cmd.Flags().GetBool("debug"); enabled {
+			if debugEnabled(cmd) {
 				writer = cmd.ErrOrStderr()
 			}
 			cmd.SetContext(debuglog.WithWriter(previous, writer))
@@ -27,4 +27,12 @@ func instrumentCommands(cmd *cobra.Command) {
 	for _, child := range cmd.Commands() {
 		instrumentCommands(child)
 	}
+}
+
+// Either flag enables diagnostics; an explicit false never disables the other.
+func debugEnabled(cmd *cobra.Command) bool {
+	flags := cmd.Root().PersistentFlags()
+	debug, _ := flags.GetBool("debug")
+	verbose, _ := flags.GetBool("verbose")
+	return debug || verbose
 }

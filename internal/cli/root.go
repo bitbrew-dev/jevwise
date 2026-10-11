@@ -50,6 +50,7 @@ func NewRootWithFactory(factory ServiceFactory) *cobra.Command {
 	cmd.Flags().BoolVar(&showVersion, "version", false, "Print version and build metadata")
 	flags := cmd.PersistentFlags()
 	flags.Bool("debug", false, "Write safe structured debug logs to stderr")
+	flags.Bool("verbose", false, "Alias for --debug: write safe structured debug logs to stderr")
 	flags.String("config", "", "Path to TOML configuration")
 	flags.String("provider", "jev", "Decision provider: jev, codex or claude")
 	flags.String("api-key", "", "Jev API key (prefer environment or config)")
@@ -88,7 +89,7 @@ func LoadConfig(cmd *cobra.Command) (_ config.Config, resultErr error) {
 // never credentials, prompt bodies, option content, or raw request/response bodies.
 func Logger(cmd *cobra.Command) log.Logger {
 	level := log.InfoLevel
-	if enabled, _ := cmd.Root().PersistentFlags().GetBool("debug"); enabled {
+	if debugEnabled(cmd) {
 		level = log.DebugLevel
 	}
 	return log.Logger{Level: level, Writer: log.IOWriter{Writer: cmd.ErrOrStderr()}}

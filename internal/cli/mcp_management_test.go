@@ -157,7 +157,13 @@ func TestMCPManagementPIDIsInspectionOnlyAfterAuthentication(t *testing.T) {
 			key = strings.Repeat("x", 32)
 		}
 		var stops atomic.Int32
-		management, err := daemon.NewManagement(address, strings.Repeat("i", 32), key, func() { stops.Add(1) })
+		stopGate, releaseStop := context.WithCancel(context.Background())
+		defer releaseStop()
+		management, err := daemon.NewManagement(address, strings.Repeat("i", 32), key, func() {
+			// Force the acknowledgement to arrive before cancellation completes.
+			<-stopGate.Done()
+			stops.Add(1)
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -166,7 +172,7 @@ func TestMCPManagementPIDIsInspectionOnlyAfterAuthentication(t *testing.T) {
 		}
 		server.Config.Handler = management.Handler()
 		server.Start()
-		defer server.Close()
+		defer func() { releaseStop(); server.Close() }()
 		directory := filepath.Join(t.TempDir(), "runtime")
 		// Deliberately unrelated to the HTTP server's actual PID: this value
 		// must only be printed, never establish identity or authorize a stop.
@@ -191,8 +197,15 @@ func TestMCPManagementPIDIsInspectionOnlyAfterAuthentication(t *testing.T) {
 				t.Fatalf("PID %s = %q, %v", action, out, err)
 			}
 		}
+		// A stop acknowledgement is not proof that the deferred callback finished.
+		releaseStop()
+		server.Close() // Join HTTP handlers before checking cancellation side effects.
+		wantStops := int32(0)
+		if authenticated {
+			wantStops = 1
+		}
 		after, err := os.ReadFile(filepath.Join(directory, "state.json"))
-		if err != nil || !bytes.Equal(before, after) || (authenticated && stops.Load() != 1) {
+		if err != nil || !bytes.Equal(before, after) || stops.Load() != wantStops {
 			t.Fatal("PID metadata changed management authority or state", err)
 		}
 	}

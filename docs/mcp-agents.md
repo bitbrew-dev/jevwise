@@ -46,6 +46,26 @@ Clients read the token from their process environment. Launch the client from th
 
 ## 3. Choose a client
 
+### One-command registration (current checkout)
+
+After starting MCP and loading the token in your client terminal, run:
+
+```sh
+jevwise mcp install codex
+jevwise mcp install claude
+# Match a custom server port:
+jevwise mcp install codex --listen 127.0.0.1:9090
+# Claude-only scopes:
+jevwise mcp install claude --scope local   # Current project, private settings
+jevwise mcp install claude --scope project # Shared .mcp.json, requires client approval
+```
+
+- Both default to user-wide settings. Requires the selected `codex` or `claude` executable on PATH; Claude Code must support `--bare`. Standard client configuration overrides (`CODEX_HOME`, `CLAUDE_CONFIG_DIR`) are honored.
+- Uses native registration commands, preserving unrelated settings. An existing `jevwise` entry is refused; inspect it before intentionally removing/updating it with the client's own commands. Configuration assumes trusted clients and cooperative writers; do not run competing installers/settings edits concurrently.
+- Stores `JEVWISE_MCP_TOKEN` as an environment reference, never its value. The installer does not export the token into your shell, read Jev configuration, start MCP, verify connectivity or make a paid decision. Use section 2 to load the token before launching your client. `--listen` must match the running server; it does not change the server port.
+- Child processes do not inherit API keys or MCP tokens. Client output is bounded and withheld, including diagnostics; failures may have partially registered an entry, so inspect settings before retrying. `--timeout` bounds registration (default `10s`), not a server/model request. Only the direct process is managed, not wrapper descendants.
+- Manual setup remains available below. Installed registration is not proof of a live authenticated connection; verify via `/mcp` without calling `decide`.
+
 ### Codex
 
 Register the HTTP endpoint, storing the **environment variable name**, not its value:

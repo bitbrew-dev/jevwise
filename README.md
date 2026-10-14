@@ -78,6 +78,7 @@ api_key = "$ABCD_TOKEN"
 - Use a separate bearer token: **never reuse the upstream API key or give it to the agent**.
 - With no token override, `jevwise mcp` generates a random token in `<runtime-dir>/agent.token` and reuses it across restarts. Only your upstream API key needs manual setup.
 - `jevwise mcp token-path` prints the automatic file path, never the secret; see [agent onboarding](docs/mcp-agents.md) to load it into the client environment.
+- Register the installed client with `jevwise mcp install codex` or `jevwise mcp install claude`. Both default to user-wide settings; custom ports use `--listen IP:PORT`. Registration stores only an environment reference, not the token. See [agent onboarding](docs/mcp-agents.md#3-choose-a-client).
 - Overrides take precedence: `--token-file /path/to/protected/agent-token` > `JEVWISE_MCP_TOKEN` (including aliases) > automatic token. Explicit values are never copied into the automatic file.
 - MCP fallback names, in order: `JEVWISE_MCP_AUTH_TOKEN`, `JEV_MCP_TOKEN`. Invalid nonempty tokens fail without fallback; tokens must be printable ASCII without whitespace.
 - Keep secrets out of shell history, logs and stored agent configuration. Follow [local MCP setup](docs/mcp.md) and [agent onboarding](docs/mcp-agents.md) for protected files and client environment references.

@@ -134,7 +134,7 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 		runtimeDir = filepath.Join(cache, "jevwise-mcp")
 	}
 	cmd.PersistentFlags().StringVar(&runtimeDir, "runtime-dir", runtimeDir, "Private per-user MCP background runtime directory")
-	cmd.AddCommand(newMCPManagement("status", &runtimeDir), newMCPManagement("stop", &runtimeDir), newMCPTokenPath(&runtimeDir))
+	cmd.AddCommand(newMCPManagement("status", &runtimeDir), newMCPManagement("stop", &runtimeDir), newMCPTokenPath(&runtimeDir), newMCPInstall(runAgentCommand))
 	return cmd
 }
 

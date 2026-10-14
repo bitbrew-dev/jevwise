@@ -30,6 +30,7 @@ jevwise mcp stop
 | `jevwise mcp` | Foreground server; prints the public `/mcp` endpoint after startup. Ctrl+C stops it. |
 | `--background` | Starts a terminal-independent child after authenticated readiness and ownership checks. |
 | `jevwise mcp status` | Authenticates the exact instance and reports its startup/running state. v1.2.0 and newer also show the recorded PID when available. |
+| `jevwise mcp install codex` / `claude` | Register the HTTP endpoint using an installed client CLI; no server/model startup or token export. |
 | `jevwise mcp token-path` | Prints only the automatic token path; does not read credentials, create files or report explicit overrides. |
 | `jevwise mcp stop` | Authenticates the exact instance and requests shutdown; an acknowledgement is not a promise that cleanup has already finished. |
 | `--listen` | Literal loopback IP and nonzero port; default `127.0.0.1:8080`. |

@@ -134,7 +134,7 @@ func TestSkillModesHelpAndLocalCallbacks(t *testing.T) {
 		t.Fatal("online mode used IO/config", err)
 	}
 	out, _, err = execute(skillRoot(nil, nil), "skill", "--help")
-	if err != nil || strings.Contains(out, "--jev") || !strings.Contains(out, "--online") {
+	if err != nil || strings.Contains(out, "--jev") || strings.Contains(out, "--claude") || strings.Contains(out, "--agent") || !strings.Contains(out, "codex") || !strings.Contains(out, "--online") {
 		t.Fatal("hidden Jev/help invalid", err)
 	}
 	for _, args := range [][]string{{"skill", "private-content"}, {"skill", "--online", "--local"}, {"skill", "--online=false"}, {"skill", "--local=false"}, {"skill", "--jev=false"}, {"skill", "--online", "--provider", "claude"}, {"skill", "--timeout", "0s"}} {
@@ -220,6 +220,8 @@ func TestSkillTargetFlagsAndRegistration(t *testing.T) {
 		force  bool
 	}{
 		{nil, ".agent", false}, {[]string{"--agent"}, ".agent", false}, {[]string{"--claude"}, ".claude", false},
+		{[]string{"codex"}, ".agents", false}, {[]string{"claude"}, ".claude", false}, {[]string{"agent"}, ".agent", false},
+		{[]string{"codex", "--force"}, ".agents", true}, {[]string{"--force", "claude"}, ".claude", true},
 		{[]string{"--claude", "--force"}, ".claude", true}, {[]string{"--force=false"}, ".agent", false},
 	} {
 		called := false
@@ -235,7 +237,8 @@ func TestSkillTargetFlagsAndRegistration(t *testing.T) {
 		}
 	}
 	for _, args := range [][]string{
-		{"--agent=false"}, {"--claude=false"}, {"--agent", "--claude"},
+		{"codex", "--agent"}, {"claude", "--claude"}, {"agent", "--online"}, {"codex", "--online"},
+		{"codex", "private-content"}, {"--agent=false"}, {"--claude=false"}, {"--agent", "--claude"},
 		{"--online", "--agent"}, {"--online", "--claude"}, {"--online", "--force"}, {"--online", "--force=false"},
 	} {
 		cmd := skillRoot(func(context.Context) ([]byte, error) { t.Fatal("invalid target fetched"); return nil, nil }, func(context.Context, []byte, string, bool) error { t.Fatal("invalid target installed"); return nil })

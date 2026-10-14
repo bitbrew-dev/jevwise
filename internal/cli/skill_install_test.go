@@ -22,7 +22,7 @@ func skillInstalled(t *testing.T, project, target string, want []byte) {
 }
 
 func TestSkillInstallTargetsAndForce(t *testing.T) {
-	for _, target := range []string{".agent", ".claude"} {
+	for _, target := range []string{".agent", ".agents", ".claude"} {
 		project := t.TempDir()
 		if err := installSkillAt(context.Background(), project, validSkill, target, false, skillInstallHooks{}); err != nil {
 			t.Fatal(err)

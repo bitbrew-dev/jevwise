@@ -23,6 +23,9 @@ import (
 // Only the task-owned test binary gets this synthetic child service. Production
 // CLI registration, bootstrap, privacy, HTTP and cleanup remain real code paths.
 func TestMain(m *testing.M) {
+	if len(os.Args) == 3 && os.Args[1] == "__jevwise-client-fixture" {
+		os.Exit(runAgentCommandFixture())
+	}
 	if len(os.Args) == 2 && os.Args[1] == daemon.ChildArgument && os.Getenv("JEVWISE_PROCESS_FIXTURE") == "1" {
 		os.Exit(runProcessFixture())
 	}

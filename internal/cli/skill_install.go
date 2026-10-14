@@ -43,8 +43,8 @@ func installSkillAt(ctx context.Context, project string, data []byte, target str
 	if err := validateSkill(data); err != nil {
 		return err
 	}
-	if target != ".agent" && target != ".claude" {
-		return errors.New("skill target must be .agent or .claude")
+	if target != ".agent" && target != ".claude" && target != ".agents" {
+		return errors.New("skill target must be .agent, .agents or .claude")
 	}
 	switch runtime.GOOS {
 	case "js", "wasip1", "plan9":

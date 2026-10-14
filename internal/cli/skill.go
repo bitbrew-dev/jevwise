@@ -105,11 +105,14 @@ func newSkill(fetch skillFetch, install skillInstall) *cobra.Command {
 			if flag := cmd.Flags().Lookup("provider"); flag != nil && flag.Changed && flag.Value.String() != "jev" {
 				return errors.New("skill supports only the Jev provider")
 			}
+			if cmd.Name() != "skill" && (cmd.Flags().Changed("agent") || cmd.Flags().Changed("claude")) {
+				return errors.New("do not combine skill target subcommands with target flags")
+			}
 			if cmd.Flags().Changed("agent") && !agent || cmd.Flags().Changed("claude") && !claude || agent && claude {
 				return errors.New("select at most one enabled skill target")
 			}
 			if online {
-				if cmd.Flags().Changed("agent") || cmd.Flags().Changed("claude") || cmd.Flags().Changed("force") {
+				if cmd.Name() != "skill" || cmd.Flags().Changed("agent") || cmd.Flags().Changed("claude") || cmd.Flags().Changed("force") {
 					return errors.New("online skill mode does not accept target or force flags")
 				}
 				if _, err := fmt.Fprintln(cmd.OutOrStdout(), skillURL); err != nil {
@@ -145,8 +148,10 @@ func newSkill(fetch skillFetch, install skillInstall) *cobra.Command {
 				return err
 			}
 			target := ".agent"
-			if claude {
+			if claude || cmd.Name() == "claude" {
 				target = ".claude"
+			} else if cmd.Name() == "codex" {
+				target = ".agents"
 			}
 			if err := install(ctx, data, target, force); err != nil {
 				if errors.Is(err, errSkillExists) {
@@ -156,12 +161,17 @@ func newSkill(fetch skillFetch, install skillInstall) *cobra.Command {
 			}
 			return ctx.Err()
 		}}
-	cmd.Flags().BoolVar(&online, "online", false, "Print the upstream GitHub URL without downloading")
-	cmd.Flags().BoolVar(&local, "local", false, "Fetch and install the skill (default)")
-	cmd.Flags().BoolVar(&agent, "agent", false, "Install under .agent/skills (default)")
-	cmd.Flags().BoolVar(&claude, "claude", false, "Install under .claude/skills")
-	cmd.Flags().BoolVar(&force, "force", false, "Replace an existing regular skill file")
-	cmd.Flags().BoolVar(&jev, "jev", true, "Use the Jev skill")
-	_ = cmd.Flags().MarkHidden("jev")
+	cmd.PersistentFlags().BoolVar(&online, "online", false, "Print the upstream GitHub URL without downloading")
+	cmd.PersistentFlags().BoolVar(&local, "local", false, "Fetch and install the skill (default)")
+	cmd.PersistentFlags().BoolVar(&agent, "agent", false, "Install under .agent/skills (default)")
+	cmd.PersistentFlags().BoolVar(&claude, "claude", false, "Install under .claude/skills")
+	cmd.PersistentFlags().BoolVar(&force, "force", false, "Replace an existing regular skill file")
+	cmd.PersistentFlags().BoolVar(&jev, "jev", true, "Use the Jev skill")
+	for _, name := range []string{"jev", "agent", "claude"} {
+		_ = cmd.PersistentFlags().MarkHidden(name)
+	}
+	for _, target := range []string{"codex", "claude", "agent"} {
+		cmd.AddCommand(&cobra.Command{Use: target, Short: "Install Jev's skill for " + target, Args: cmd.Args, RunE: cmd.RunE})
+	}
 	return cmd
 }

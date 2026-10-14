@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/bitbrew-dev/jevwise/internal/debuglog"
@@ -24,6 +25,19 @@ func newMCPInstall(run agentCommand) *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error { return cmd.Help() }}
 	cmd.PersistentFlags().StringVar(&address, "listen", "127.0.0.1:8080", "Server's literal loopback IP:port (same as mcp --listen)")
 	cmd.PersistentFlags().StringVar(&scope, "scope", "user", "Client settings scope: user; Claude also supports local or project")
+	_ = cmd.RegisterFlagCompletionFunc("scope", func(cmd *cobra.Command, _ []string, prefix string) ([]string, cobra.ShellCompDirective) {
+		choices := []string{"user"}
+		if cmd.Name() != "codex" {
+			choices = append(choices, "local", "project")
+		}
+		var matches []string
+		for _, choice := range choices {
+			if strings.HasPrefix(choice, prefix) {
+				matches = append(matches, choice)
+			}
+		}
+		return matches, cobra.ShellCompDirectiveNoFileComp
+	})
 	for _, client := range []string{"codex", "claude"} {
 		cmd.AddCommand(&cobra.Command{Use: client, Short: "Register Jevwise with " + client, Args: noArgs,
 			RunE: func(cmd *cobra.Command, _ []string) error {

@@ -4,6 +4,20 @@
 
 The examples assume `jevwise` is installed on PATH. For a source build, use `bin/jevwise` instead.
 
+## Shell completion
+
+Enable completion in your current Zsh session (after installing/upgrading Jevwise):
+
+```sh
+autoload -Uz compinit
+compinit
+source <(jevwise completion zsh)
+```
+
+- For Bash, use `source <(jevwise completion bash)` instead. Fish and PowerShell scripts are available through `jevwise completion fish` and `jevwise completion powershell`.
+- `jevwise mcp install claude --scope <Tab>` suggests `user`, `local`, `project`; Codex suggests only `user`. Prefixes and `--scope=prefix` also work, without filename suggestions.
+- Completion reads no decision configuration or credentials and never invokes a client installer. Use a binary containing the new completion callback; source/worktree changes do not update an installed binary automatically.
+
 ## Decisions
 
 ```sh

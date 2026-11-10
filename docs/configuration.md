@@ -15,13 +15,14 @@ Precedence: **changed flags > nonblank environment > TOML > defaults**. These na
 | Operation timeout | `--timeout` | `TS_JEV_TIMEOUT` | `10s` |
 | MCP host | `--listen` (with port) | `TS_JEV_MCP_BASE_URL` | `127.0.0.1` |
 | MCP port | `--listen` (with host) | `TS_JEV_MCP_PORT` | `8080` |
+| Debug logging | `--debug`, `--verbose` | `TS_JEV_DEBUG` | `false` |
 
 - `mcp_base_url` is a literal loopback IP without scheme or port (`127.0.0.1`, `::1`); `http://`, `localhost` and non-loopback hosts fail. `mcp_port` is an integer from 1 to 65535 (`mcp_port = 8080` or `"8080"`). `jevwise mcp` and `jevwise mcp install` read only these two keys for the address; a changed `--listen` overrides both, so `jevwise mcp --listen 127.0.0.1:9090` equals `jevwise mcp` with `mcp_port = 9090`.
 - Explicit file: `--config /path/to/config.toml`. Missing or invalid explicit files fail.
 - Otherwise: current-directory `.jevwise.toml`, then `$XDG_CONFIG_HOME/jevwise/jevwise.toml` or `$HOME/.config/jevwise/jevwise.toml`. Only a missing global file is allowed. The selected local file replaces rather than merges with global settings; no ancestor-directory search or visible-name fallback.
 - On Windows, the default global path is `%USERPROFILE%\.config\jevwise\jevwise.toml` when `XDG_CONFIG_HOME` is unset.
 - Quoted `--config "~/.config/jevwise/jevwise.toml"` paths expand the current user's home directory for init, view, edit and runtime loading. `~otheruser` and shell/environment evaluation of paths are not supported. An XDG path beginning with `~/` is supported too.
-- Trust the current directory before running decision/MCP commands: local settings can change the upstream destination. Environment/changed flags still win. Invalid, oversized (over 1 MiB), linked or nonregular local files fail without global fallback; help/version do not load them.
+- Trust the current directory before running decision/MCP commands: local settings can change the upstream destination. Environment/changed flags still win. Invalid, oversized (over 1 MiB), linked or nonregular local files fail without global fallback; help/version do not load them, except that `version` and other commands read only the `debug` key and ignore an invalid or unreadable file.
 - Start with [config.example.toml](../config.example.toml). Prefer environment credentials rather than command-line secrets.
 - TOML `api_key` supports `$NAME`/`${NAME}`, for example `api_key = "$JEV_API_KEY"` or `api_key = "${JEV_MCP_API_KEY}"`. Runtime loading expands references and trims the result; undefined variables become empty.
 - API environment names above are checked left to right, skipping blank values. `JEV_API_KEY` is for the upstream API; `JEVWISE_MCP_TOKEN` is separate local MCP authentication. Never reuse the same credential.

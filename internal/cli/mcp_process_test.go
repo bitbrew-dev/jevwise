@@ -29,7 +29,15 @@ func TestMain(m *testing.M) {
 	if len(os.Args) == 2 && os.Args[1] == daemon.ChildArgument && os.Getenv("JEVWISE_PROCESS_FIXTURE") == "1" {
 		os.Exit(runProcessFixture())
 	}
-	os.Exit(m.Run())
+	_ = os.Unsetenv("TS_JEV_DEBUG")
+	isolated, err := os.MkdirTemp("", "jevwise-cli-config-")
+	if err != nil {
+		os.Exit(1)
+	}
+	_ = os.Setenv("XDG_CONFIG_HOME", isolated)
+	code := m.Run()
+	_ = os.RemoveAll(isolated)
+	os.Exit(code)
 }
 
 func runProcessFixture() (code int) {

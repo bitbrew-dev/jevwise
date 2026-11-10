@@ -13,7 +13,10 @@ Precedence: **changed flags > nonblank environment > TOML > defaults**. These na
 | Model | `--model` | `TS_JEV_MODEL`, then `TYPESAFE_DEFAULT_MODEL` | `jev-latest` |
 | Provider | `--provider` | `TS_JEV_PROVIDER` | `jev` |
 | Operation timeout | `--timeout` | `TS_JEV_TIMEOUT` | `10s` |
+| MCP host | `--listen` (with port) | `TS_JEV_MCP_BASE_URL` | `127.0.0.1` |
+| MCP port | `--listen` (with host) | `TS_JEV_MCP_PORT` | `8080` |
 
+- `mcp_base_url` is a literal loopback IP without scheme or port (`127.0.0.1`, `::1`); `http://`, `localhost` and non-loopback hosts fail. `mcp_port` is an integer from 1 to 65535 (`mcp_port = 8080` or `"8080"`). `jevwise mcp` and `jevwise mcp install` read only these two keys for the address; a changed `--listen` overrides both, so `jevwise mcp --listen 127.0.0.1:9090` equals `jevwise mcp` with `mcp_port = 9090`.
 - Explicit file: `--config /path/to/config.toml`. Missing or invalid explicit files fail.
 - Otherwise: current-directory `.jevwise.toml`, then `$XDG_CONFIG_HOME/jevwise/jevwise.toml` or `$HOME/.config/jevwise/jevwise.toml`. Only a missing global file is allowed. The selected local file replaces rather than merges with global settings; no ancestor-directory search or visible-name fallback.
 - On Windows, the default global path is `%USERPROFILE%\.config\jevwise\jevwise.toml` when `XDG_CONFIG_HOME` is unset.

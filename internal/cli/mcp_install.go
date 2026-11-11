@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/bitbrew-dev/jevwise/internal/debuglog"
-	"github.com/bitbrew-dev/jevwise/internal/mcpserver"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +22,7 @@ func newMCPInstall(run agentCommand) *cobra.Command {
 	}
 	cmd := &cobra.Command{Use: "install", Short: "Register Jevwise with an installed MCP client", Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error { return cmd.Help() }}
-	cmd.PersistentFlags().StringVar(&address, "listen", "127.0.0.1:8080", "Server's literal loopback IP:port (same as mcp --listen)")
+	cmd.PersistentFlags().StringVar(&address, "listen", "127.0.0.1:8080", "Server's literal loopback IP:port (same as mcp --listen); overrides mcp_base_url and mcp_port")
 	cmd.PersistentFlags().StringVar(&scope, "scope", "user", "Client settings scope: user; Claude also supports local or project")
 	_ = cmd.RegisterFlagCompletionFunc("scope", func(cmd *cobra.Command, _ []string, prefix string) ([]string, cobra.ShellCompDirective) {
 		choices := []string{"user"}
@@ -44,7 +43,7 @@ func newMCPInstall(run agentCommand) *cobra.Command {
 				if err := cmd.Context().Err(); err != nil {
 					return err
 				}
-				canonical, err := mcpserver.ValidateAddress(address)
+				canonical, err := mcpListenAddress(cmd, address)
 				if err != nil {
 					return err
 				}

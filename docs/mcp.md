@@ -33,7 +33,7 @@ jevwise mcp stop
 | `jevwise mcp install codex` / `claude` | Register the HTTP endpoint using an installed client CLI; no server/model startup or token export. |
 | `jevwise mcp token-path` | Prints only the automatic token path; does not read credentials, create files or report explicit overrides. |
 | `jevwise mcp stop` | Authenticates the exact instance and requests shutdown; an acknowledgement is not a promise that cleanup has already finished. |
-| `--listen` | Literal loopback IP and nonzero port; default `127.0.0.1:8080`. |
+| `--listen` | Literal loopback IP and nonzero port; overrides `mcp_base_url` and `mcp_port` from [configuration](configuration.md); default `127.0.0.1:8080`. |
 | `--runtime-dir` | Private background state directory; default `os.UserCacheDir()/jevwise-mcp`. Use the same override for start, status and stop. |
 | `--token-file` | Explicit protected agent-token file, overriding `JEVWISE_MCP_TOKEN`; unreadable or unsafe files fail without fallback. |
 

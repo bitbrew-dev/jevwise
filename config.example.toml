@@ -6,3 +6,6 @@ model = "jev-latest"
 provider = "jev"
 timeout = "10s"
 editor = "vim"
+# Local MCP server: literal loopback IP (no scheme) and port.
+mcp_base_url = "127.0.0.1"
+mcp_port = 8080

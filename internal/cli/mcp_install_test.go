@@ -14,6 +14,8 @@ import (
 
 func installerRoot(t *testing.T, run agentCommand) *cobra.Command {
 	t.Helper()
+	decisionEnvironment(t)
+	t.Chdir(t.TempDir())
 	root := NewRootWithFactory(func(config.Config) (service.DecisionService, func(), error) {
 		t.Fatal("installation initialized upstream service")
 		return nil, nil, nil

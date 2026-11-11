@@ -94,6 +94,13 @@ func fileValues(path string) (map[string]string, error) {
 		}
 		values[key] = strings.TrimSpace(value)
 	}
+	mcp, err := mcpValues(v, false)
+	if err != nil {
+		return nil, err
+	}
+	for key, value := range mcp {
+		values[key] = value
+	}
 	return values, nil
 }
 
@@ -110,8 +117,11 @@ func View(path string) (string, error) {
 	}
 	values["api_key"] = "[redacted]"
 	var out strings.Builder
-	for _, key := range []string{"api_key", "base_url", "model", "provider", "timeout", "editor"} {
+	for _, key := range []string{"api_key", "base_url", "model", "provider", "timeout", "editor", "mcp_base_url", "mcp_port"} {
 		value, _ := json.Marshal(values[key])
+		if key == "mcp_port" {
+			value = []byte(values[key])
+		}
 		out.WriteString(key + " = " + string(value) + "\n")
 	}
 	return out.String(), nil

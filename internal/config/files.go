@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -101,6 +102,11 @@ func fileValues(path string) (map[string]string, error) {
 	for key, value := range mcp {
 		values[key] = value
 	}
+	debug, err := debugValue(v)
+	if err != nil {
+		return nil, err
+	}
+	values["debug"] = strconv.FormatBool(debug)
 	return values, nil
 }
 
@@ -117,9 +123,9 @@ func View(path string) (string, error) {
 	}
 	values["api_key"] = "[redacted]"
 	var out strings.Builder
-	for _, key := range []string{"api_key", "base_url", "model", "provider", "timeout", "editor", "mcp_base_url", "mcp_port"} {
+	for _, key := range []string{"api_key", "base_url", "model", "provider", "timeout", "editor", "mcp_base_url", "mcp_port", "debug"} {
 		value, _ := json.Marshal(values[key])
-		if key == "mcp_port" {
+		if key == "mcp_port" || key == "debug" {
 			value = []byte(values[key])
 		}
 		out.WriteString(key + " = " + string(value) + "\n")

@@ -3,6 +3,7 @@ package cli
 import (
 	"io"
 
+	"github.com/bitbrew-dev/jevwise/internal/config"
 	"github.com/bitbrew-dev/jevwise/internal/debuglog"
 	"github.com/spf13/cobra"
 )
@@ -30,9 +31,16 @@ func instrumentCommands(cmd *cobra.Command) {
 }
 
 // Either flag enables diagnostics; an explicit false never disables the other.
+// Without a changed flag, the debug setting applies; unreadable settings mean off.
+// Hidden commands such as the background child keep their output isolated.
 func debugEnabled(cmd *cobra.Command) bool {
 	flags := cmd.Root().PersistentFlags()
 	debug, _ := flags.GetBool("debug")
 	verbose, _ := flags.GetBool("verbose")
-	return debug || verbose
+	if cmd.Hidden || flags.Changed("debug") || flags.Changed("verbose") {
+		return debug || verbose
+	}
+	path, _ := flags.GetString("config")
+	enabled, err := config.Debug(path)
+	return err == nil && enabled
 }

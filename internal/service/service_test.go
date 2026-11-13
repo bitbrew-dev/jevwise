@@ -51,7 +51,7 @@ func TestProviderSelectionNeverInvokesDeferredProviders(t *testing.T) {
 		t.Fatal("placeholder or unknown provider invoked client")
 		return nil, nil
 	}
-	for _, provider := range []string{"codex", "claude", "unknown-secret"} {
+	for _, provider := range []string{"gemini", "codex", "claude", "unknown-secret"} {
 		for _, callback := range []SystemOneFunc{nil, send} {
 			svc, err := New(provider, callback)
 			if svc != nil || err == nil || strings.Contains(err.Error(), "unknown-secret") {

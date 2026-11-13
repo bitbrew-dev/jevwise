@@ -70,7 +70,7 @@ func New(provider string, send SystemOneFunc) (DecisionService, error) {
 			return nil, errors.New("jev requires a System One client")
 		}
 		return jev{send}, nil
-	case "codex", "claude":
+	case "gemini", "codex", "claude":
 		return nil, fmt.Errorf("%s: %w", provider, ErrNotImplemented)
 	default:
 		return nil, errors.New("unknown decision provider")

@@ -29,7 +29,9 @@ func TestMain(m *testing.M) {
 	if len(os.Args) == 2 && os.Args[1] == daemon.ChildArgument && os.Getenv("JEVWISE_PROCESS_FIXTURE") == "1" {
 		os.Exit(runProcessFixture())
 	}
-	_ = os.Unsetenv("TS_JEV_DEBUG")
+	for _, name := range []string{"TS_JEV_DEBUG", "GOOGLE_API_KEY", "GEMINI_API_KEY", "GOOGLE_GEMINI_BASE_URL"} {
+		_ = os.Unsetenv(name)
+	}
 	isolated, err := os.MkdirTemp("", "jevwise-cli-config-")
 	if err != nil {
 		os.Exit(1)

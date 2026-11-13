@@ -6,7 +6,7 @@
 
 Precedence: **changed flags > nonblank environment > TOML > defaults**. These names apply to the CLI; the standalone Go SDK retains its `TYPESAFE_API_KEY` fallback.
 
-Settings are grouped into tables. `[general]` selects the provider, which reads its settings from `[provider.<name>]` (`jev`, `codex` or `claude`); other provider tables are ignored.
+Settings are grouped into tables. `[general]` selects the provider, which reads its settings from `[provider.<name>]` (`jev`, `gemini`, `codex` or `claude`); other provider tables are ignored.
 
 ```toml
 [general]
@@ -32,12 +32,20 @@ timeout = "10s"
 | `general.editor` | `config edit --editor` | Not read | `vim` |
 | `mcp.host` | `--listen` (with port) | `TS_JEV_MCP_BASE_URL` | `127.0.0.1` |
 | `mcp.port` | `--listen` (with host) | `TS_JEV_MCP_PORT` | `8080` |
-| `provider.<name>.api_key` | `--api-key` | `JEV_API_KEY`; aliases: `JEVWISE_API_KEY`, `TS_JEV_API_KEY`, `TYPESAFE_API_KEY` | Required for Jev |
-| `provider.<name>.base_url` | `--base-url` | `TS_JEV_BASE_URL`, then `TYPESAFE_BASE_URL` | `https://api.typesafe.ai` |
-| `provider.<name>.model` | `--model` | `TS_JEV_MODEL`, then `TYPESAFE_DEFAULT_MODEL` | `jev-latest` |
+| `provider.<name>.api_key` | `--api-key` | See provider table below | Required for Jev and Gemini |
+| `provider.<name>.base_url` | `--base-url` | See provider table below | See provider table below |
+| `provider.<name>.model` | `--model` | See provider table below | See provider table below |
 | `provider.<name>.timeout` | `--timeout` | `TS_JEV_TIMEOUT` | `10s` |
 
-- Environment names are unchanged from the flat layout, so `TS_JEV_MCP_BASE_URL` still sets `mcp.host`. Flags and environment apply to the selected provider.
+Provider environment names and defaults. Each provider reads only its own names, so a Jev key or URL never reaches Gemini, and the reverse:
+
+| Provider | API key environment | Base URL environment, default | Model environment, default |
+| --- | --- | --- | --- |
+| `jev` (also `codex`, `claude`) | `JEV_API_KEY`; aliases: `JEVWISE_API_KEY`, `TS_JEV_API_KEY`, `TYPESAFE_API_KEY` | `TS_JEV_BASE_URL`, then `TYPESAFE_BASE_URL`; `https://api.typesafe.ai` | `TS_JEV_MODEL`, then `TYPESAFE_DEFAULT_MODEL`; `jev-latest` |
+| `gemini` | `GOOGLE_API_KEY`, then `GEMINI_API_KEY` (as in google-genai) | `GOOGLE_GEMINI_BASE_URL`; `https://generativelanguage.googleapis.com` | None; `gemini-decision-1` |
+
+- Changed flags apply to the selected provider. Other environment names are unchanged from the flat layout, so `TS_JEV_MCP_BASE_URL` still sets `mcp.host`.
+- The `gemini` provider name is reserved in this release: selecting it reports "provider is not implemented" until the Gemini decision service is wired in.
 - `mcp.host` is a literal loopback IP without scheme or port (`127.0.0.1`, `::1`); `http://`, `localhost` and non-loopback hosts fail. `mcp.port` is an integer from 1 to 65535 (`port = 8080` or `"8080"`). `jevwise mcp` and `jevwise mcp install` read only these two keys for the address; a changed `--listen` overrides both, so `jevwise mcp --listen 127.0.0.1:9090` equals `jevwise mcp` with `port = 9090` under `[mcp]`.
 
 ### Upgrading a flat configuration

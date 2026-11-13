@@ -15,7 +15,7 @@ import (
 func cleanEnv(t *testing.T) {
 	t.Helper()
 	t.Chdir(t.TempDir())
-	for _, name := range []string{"JEV_API_KEY", "JEVWISE_API_KEY", "TS_JEV_API_KEY", "TS_JEV_BASE_URL", "TS_JEV_MODEL", "TS_JEV_PROVIDER", "TS_JEV_TIMEOUT", "TYPESAFE_API_KEY", "TYPESAFE_BASE_URL", "TYPESAFE_DEFAULT_MODEL"} {
+	for _, name := range []string{"JEV_API_KEY", "JEVWISE_API_KEY", "TS_JEV_API_KEY", "TS_JEV_BASE_URL", "TS_JEV_MODEL", "TS_JEV_PROVIDER", "TS_JEV_TIMEOUT", "TYPESAFE_API_KEY", "TYPESAFE_BASE_URL", "TYPESAFE_DEFAULT_MODEL", "GOOGLE_API_KEY", "GEMINI_API_KEY", "GOOGLE_GEMINI_BASE_URL"} {
 		t.Setenv(name, "")
 	}
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
@@ -158,5 +158,39 @@ func TestProviderTablesAreIsolated(t *testing.T) {
 	text, err := View(path)
 	if err != nil || strings.Contains(text, "gemini") || strings.Contains(text, "codex-model") {
 		t.Fatal("view printed an unselected provider table", err)
+	}
+}
+
+func TestGeminiSettingsNeverUseJevCredentialsOrDestinations(t *testing.T) {
+	cleanEnv(t)
+	for name, value := range map[string]string{"JEV_API_KEY": "jev-key", "TYPESAFE_API_KEY": "typesafe-key", "TS_JEV_BASE_URL": "https://jev.test", "TYPESAFE_DEFAULT_MODEL": "jev-model"} {
+		t.Setenv(name, value)
+	}
+	dir := t.TempDir()
+	path := writeConfig(t, filepath.Join(dir, "config.toml"), "[general]\nprovider='gemini'\n")
+	cfg, err := Load(path, nil)
+	if err != nil || cfg.APIKey != "" || cfg.BaseURL != "https://generativelanguage.googleapis.com" || cfg.Model != "gemini-decision-1" || cfg.Timeout != 10*time.Second {
+		t.Fatal("gemini picked up Jev settings or lost its defaults", err)
+	}
+	t.Setenv("GEMINI_API_KEY", "gemini-key")
+	if cfg, err := Load(path, nil); err != nil || cfg.APIKey != "gemini-key" {
+		t.Fatal("GEMINI_API_KEY ignored", err)
+	}
+	t.Setenv("GOOGLE_API_KEY", "google-key")
+	t.Setenv("GOOGLE_GEMINI_BASE_URL", "https://gemini.test")
+	if cfg, err := Load(path, nil); err != nil || cfg.APIKey != "google-key" || cfg.BaseURL != "https://gemini.test" {
+		t.Fatal("GOOGLE_API_KEY must win and GOOGLE_GEMINI_BASE_URL must apply", err)
+	}
+	jevPath := writeConfig(t, filepath.Join(dir, "jev.toml"), "[provider.gemini]\napi_key='file-gemini-key'\n")
+	if cfg, err := Load(jevPath, nil); err != nil || cfg.APIKey != "jev-key" || cfg.BaseURL != "https://jev.test" || cfg.Model != "jev-model" {
+		t.Fatal("Jev picked up Gemini settings", err)
+	}
+	t.Setenv("GOOGLE_API_KEY", "")
+	t.Setenv("GEMINI_API_KEY", "")
+	writeConfig(t, path, "[general]\nprovider='gemini'\n[provider.gemini]\napi_key='$GEMINI_FILE_KEY'\nmodel='gemini-decision-2'\n")
+	t.Setenv("GEMINI_FILE_KEY", "file-gemini-key")
+	text, viewErr := View(path)
+	if cfg, err := Load(path, nil); err != nil || viewErr != nil || cfg.APIKey != "file-gemini-key" || cfg.Model != "gemini-decision-2" || !strings.Contains(text, "[provider.gemini]\napi_key = \"[redacted]\"\nbase_url = \"https://generativelanguage.googleapis.com\"") {
+		t.Fatal("gemini table not used by load or view", err, viewErr, text)
 	}
 }

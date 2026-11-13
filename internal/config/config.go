@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitbrew-dev/jevwise/internal/gemini"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -21,7 +22,9 @@ type Config struct {
 }
 
 // Providers lists the accepted provider names; each has a [provider.<name>] table.
-var Providers = []string{"jev", "codex", "claude"}
+var Providers = []string{"jev", "gemini", "codex", "claude"}
+
+var errProvider = errors.New("provider must be jev, gemini, codex or claude")
 
 // Load applies changed flags > nonblank environment > TOML > defaults.
 // An empty path selects ./.jevwise.toml, then the Jevwise global file.
@@ -45,16 +48,16 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 		}
 	}
 	values := make(map[string]string)
-	provider, _, err := resolveSetting(v, flags, "provider", "general.provider")
+	provider, _, err := resolveSetting(v, flags, "", "provider", "general.provider")
 	if err != nil {
 		return Config{}, err
 	}
 	if !slices.Contains(Providers, provider) {
-		return Config{}, errors.New("provider must be jev, codex or claude")
+		return Config{}, errProvider
 	}
 	values["provider"] = provider
 	for _, key := range []string{"api_key", "base_url", "model", "timeout"} {
-		value, fromFile, err := resolveSetting(v, flags, key, "provider."+provider+"."+key)
+		value, fromFile, err := resolveSetting(v, flags, provider, key, "provider."+provider+"."+key)
 		if err != nil {
 			return Config{}, err
 		}
@@ -67,14 +70,14 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 }
 
 // resolveSetting applies changed flag > nonblank environment > TOML path > default
-// for one setting and reports whether the value came from the file.
-func resolveSetting(v *viper.Viper, flags *pflag.FlagSet, key, path string) (string, bool, error) {
+// for one setting of the given provider and reports whether it came from the file.
+func resolveSetting(v *viper.Viper, flags *pflag.FlagSet, provider, key, path string) (string, bool, error) {
 	if flags != nil {
 		if flag := flags.Lookup(strings.ReplaceAll(key, "_", "-")); flag != nil && flag.Changed {
 			return strings.TrimSpace(flag.Value.String()), false, nil
 		}
 	}
-	for _, name := range envNames(key) {
+	for _, name := range envNames(provider, key) {
 		if value := strings.TrimSpace(os.Getenv(name)); value != "" {
 			return value, false, nil
 		}
@@ -82,7 +85,7 @@ func resolveSetting(v *viper.Viper, flags *pflag.FlagSet, key, path string) (str
 	if value, ok, err := fileString(v, path); ok || err != nil {
 		return value, ok, err
 	}
-	return defaultValues()[key], false, nil
+	return defaultValues(provider)[key], false, nil
 }
 
 // fileString reads one string setting from the parsed file only.
@@ -98,7 +101,19 @@ func fileString(v *viper.Viper, path string) (string, bool, error) {
 	return strings.TrimSpace(value), true, nil
 }
 
-func envNames(key string) []string {
+// envNames keeps credentials and destinations per provider: Jev names never
+// configure Gemini, and Gemini names follow google-genai (GOOGLE_API_KEY wins).
+func envNames(provider, key string) []string {
+	if provider == "gemini" {
+		switch key {
+		case "api_key":
+			return []string{"GOOGLE_API_KEY", "GEMINI_API_KEY"}
+		case "base_url":
+			return []string{"GOOGLE_GEMINI_BASE_URL"}
+		case "model":
+			return nil
+		}
+	}
 	switch key {
 	case "api_key":
 		return []string{"JEV_API_KEY", "JEVWISE_API_KEY", "TS_JEV_API_KEY", "TYPESAFE_API_KEY"}
@@ -110,8 +125,12 @@ func envNames(key string) []string {
 	return []string{"TS_JEV_" + strings.ToUpper(key)}
 }
 
-func defaultValues() map[string]string {
-	return map[string]string{"api_key": "", "base_url": "https://api.typesafe.ai", "model": "jev-latest", "provider": "jev", "timeout": "10s"}
+func defaultValues(provider string) map[string]string {
+	values := map[string]string{"api_key": "", "base_url": "https://api.typesafe.ai", "model": "jev-latest", "provider": "jev", "timeout": "10s"}
+	if provider == "gemini" {
+		values["base_url"], values["model"] = gemini.DefaultBaseURL, gemini.DefaultModel
+	}
+	return values
 }
 
 func fromValues(values map[string]string) (Config, error) {
@@ -141,10 +160,8 @@ func (c Config) Validate() error {
 	if strings.TrimSpace(c.Model) == "" {
 		return errors.New("model must not be blank")
 	}
-	switch c.Provider {
-	case "jev", "codex", "claude":
-	default:
-		return errors.New("provider must be jev, codex or claude")
+	if !slices.Contains(Providers, c.Provider) {
+		return errProvider
 	}
 	return nil
 }

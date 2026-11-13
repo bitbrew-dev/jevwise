@@ -1,6 +1,7 @@
 package config
 
 import (
+	"cmp"
 	"context"
 	"crypto/rand"
 	_ "embed"
@@ -81,7 +82,11 @@ func fileValues(path string) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	values := defaultValues()
+	provider, _, err := fileString(v, "general.provider")
+	if err != nil {
+		return nil, err
+	}
+	values := defaultValues(cmp.Or(provider, "jev"))
 	values["editor"] = "vim"
 	set := func(key, path string) error {
 		value, ok, err := fileString(v, path)
@@ -94,7 +99,7 @@ func fileValues(path string) (map[string]string, error) {
 		return nil, err
 	}
 	if !slices.Contains(Providers, values["provider"]) {
-		return nil, errors.New("provider must be jev, codex or claude")
+		return nil, errProvider
 	}
 	for _, key := range []string{"api_key", "base_url", "model", "timeout"} {
 		if err := set(key, "provider."+values["provider"]+"."+key); err != nil {

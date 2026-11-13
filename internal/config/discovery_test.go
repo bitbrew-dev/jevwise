@@ -20,18 +20,18 @@ func TestDiscoveryAllowlistsHiddenLocalAndNamedGlobal(t *testing.T) {
 		t.Fatal("unrelated file or custom environment override loaded", err)
 	}
 	global, _ := GlobalPath()
-	writeConfig(t, global, "model='global'\napi_key='global-only-key'")
+	writeConfig(t, global, "[provider.jev]\nmodel='global'\napi_key='global-only-key'")
 	cfg, err = Load("", nil)
 	if err != nil || cfg.Model != "global" {
 		t.Fatal("named Jevwise global file not selected", err)
 	}
-	writeConfig(t, LocalName, "model='local'\napi_key='$JEV_MCP_API_KEY'")
+	writeConfig(t, LocalName, "[provider.jev]\nmodel='local'\napi_key='$JEV_MCP_API_KEY'")
 	cfg, err = Load("", nil)
 	path, required, pathErr := ResolvePath("")
 	if err != nil || pathErr != nil || !required || filepath.Base(path) != LocalName || cfg.Model != "local" || cfg.APIKey != "custom-variable-is-not-an-override" {
 		t.Fatal("local file or custom reference not selected", err)
 	}
-	writeConfig(t, LocalName, "model='local-only'")
+	writeConfig(t, LocalName, "[provider.jev]\nmodel='local-only'")
 	cfg, err = Load("", nil)
 	if err != nil || cfg.APIKey != "" {
 		t.Fatal("local and global files merged", err)
@@ -47,7 +47,7 @@ func TestGlobalHomeAndLiteralTildePaths(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "")
 	home := os.Getenv("HOME")
 	expected := filepath.Join(home, ".config", "jevwise", GlobalName)
-	writeConfig(t, expected, "model='home-global'\napi_key='${JEV_MCP_API_KEY}'")
+	writeConfig(t, expected, "[provider.jev]\nmodel='home-global'\napi_key='${JEV_MCP_API_KEY}'")
 	t.Setenv("JEV_MCP_API_KEY", "synthetic-custom-key")
 	for _, path := range []string{"", "~/.config/jevwise/jevwise.toml", expected} {
 		cfg, err := Load(path, nil)
@@ -84,7 +84,7 @@ func TestGlobalDirectorySymlinkSupportsDotfiles(t *testing.T) {
 	if err := os.Symlink(target, filepath.Dir(global)); err != nil {
 		t.Fatal(err)
 	}
-	writeConfig(t, filepath.Join(target, GlobalName), "model='dotfiles'")
+	writeConfig(t, filepath.Join(target, GlobalName), "[provider.jev]\nmodel='dotfiles'")
 	cfg, err := Load("", nil)
 	if err != nil || cfg.Model != "dotfiles" {
 		t.Fatal("trusted dotfiles directory symlink rejected", err)

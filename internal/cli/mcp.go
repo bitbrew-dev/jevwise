@@ -127,7 +127,7 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 			}
 			return nil
 		}}
-	cmd.Flags().StringVar(&address, "listen", "127.0.0.1:8080", "Literal loopback IP:port for /mcp; overrides mcp_base_url and mcp_port")
+	cmd.Flags().StringVar(&address, "listen", "127.0.0.1:8080", "Literal loopback IP:port for /mcp; overrides [mcp] host and port")
 	cmd.Flags().BoolVar(&background, "background", false, "Start an independent MCP background process")
 	cmd.PersistentFlags().StringVar(&tokenFile, "token-file", "", "Read an owner-private bearer token file instead of JEVWISE_MCP_TOKEN")
 	cache, _ := os.UserCacheDir()
@@ -150,8 +150,8 @@ func mcpEnvironmentToken() string {
 	return ""
 }
 
-// mcpListenAddress keeps a changed --listen ahead of the mcp_base_url and
-// mcp_port settings, which are resolved without loading any other setting.
+// mcpListenAddress keeps a changed --listen ahead of the [mcp] host and
+// port settings, which are resolved without loading any other setting.
 func mcpListenAddress(cmd *cobra.Command, listen string) (string, error) {
 	if !cmd.Flags().Changed("listen") {
 		path, err := cmd.Flags().GetString("config")

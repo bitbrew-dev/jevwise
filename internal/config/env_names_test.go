@@ -9,7 +9,7 @@ import (
 
 func TestAPIEnvironmentNamesPrecedence(t *testing.T) {
 	cleanEnv(t)
-	path := writeConfig(t, filepath.Join(t.TempDir(), "config.toml"), `api_key = "file-key"`)
+	path := writeConfig(t, filepath.Join(t.TempDir(), "config.toml"), `[provider.jev]`+"\n"+`api_key = "file-key"`)
 	names := []string{"JEV_API_KEY", "JEVWISE_API_KEY", "TS_JEV_API_KEY", "TYPESAFE_API_KEY"}
 	for i, name := range names {
 		t.Setenv(name, name+"-fixture")
@@ -48,7 +48,7 @@ func TestCustomTOMLAPIReferenceNotMCPAuthentication(t *testing.T) {
 	t.Setenv("JEV_MCP_API_KEY", "upstream-fixture")
 	t.Setenv("JEVWISE_MCP_TOKEN", "agent-fixture")
 	for _, reference := range []string{"$JEV_MCP_API_KEY", "${JEV_MCP_API_KEY}"} {
-		path := writeConfig(t, filepath.Join(t.TempDir(), "config.toml"), "api_key = '"+reference+"'")
+		path := writeConfig(t, filepath.Join(t.TempDir(), "config.toml"), "[provider.jev]\napi_key = '"+reference+"'")
 		cfg, err := Load(path, nil)
 		if err != nil || cfg.APIKey != "upstream-fixture" {
 			t.Fatal("custom TOML API key did not expand", err)

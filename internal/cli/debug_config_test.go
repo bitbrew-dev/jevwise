@@ -15,7 +15,7 @@ func TestDebugFromConfigAndFlagOverride(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	write("debug = true\n")
+	write("[general]\ndebug = true\n")
 	for _, tt := range []struct {
 		args    []string
 		enabled bool
@@ -30,7 +30,7 @@ func TestDebugFromConfigAndFlagOverride(t *testing.T) {
 			t.Fatal("debug setting precedence changed", tt.args, err)
 		}
 	}
-	write("debug = false\n")
+	write("[general]\ndebug = false\n")
 	t.Setenv("TS_JEV_DEBUG", "true")
 	if _, stderr, err := execute(NewRoot(), "version", "--config", path); err != nil || stderr == "" {
 		t.Fatal("environment did not enable debug", err)
@@ -41,7 +41,7 @@ func TestDebugFromConfigAndFlagOverride(t *testing.T) {
 		t.Fatal("background child enabled debug from environment")
 	}
 	t.Setenv("TS_JEV_DEBUG", "")
-	write("debug = 'maybe'\n")
+	write("[general]\ndebug = 'maybe'\n")
 	if out, stderr, err := execute(NewRoot(), "version", "--config", path); err != nil || stderr != "" || !strings.Contains(out, "commit:") {
 		t.Fatal("invalid debug setting broke or logged version", err)
 	}

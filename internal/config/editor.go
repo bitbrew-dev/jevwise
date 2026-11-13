@@ -5,8 +5,9 @@ import (
 	"strings"
 )
 
-// Editor reads only the selected file's editor setting, not environment/SDK
-// configuration. Invalid TOML falls back to vim so the file can be repaired.
+// Editor reads only the selected file's general.editor setting, not environment/SDK
+// configuration. Invalid TOML falls back to vim and a flat file uses its editor key,
+// so either can still be opened for repair or migration.
 func Editor(path string) (string, error) {
 	data, err := ReadFile(path)
 	if err != nil {
@@ -16,7 +17,10 @@ func Editor(path string) (string, error) {
 	if err != nil {
 		return "vim", nil
 	}
-	value := v.Get("editor")
+	value := v.Get("general.editor")
+	if isFlat(v) {
+		value = v.Get("editor")
+	}
 	if value == nil {
 		return "vim", nil
 	}

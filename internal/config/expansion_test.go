@@ -31,14 +31,14 @@ func TestLoadExpandsOnlyFileAPIKeyAndTrimsResult(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			writeConfig(t, path, "api_key = '"+test.file+"'")
+			writeConfig(t, path, "[provider.jev]\napi_key = '"+test.file+"'")
 			cfg, err := Load(path, nil)
 			if err != nil || cfg.APIKey != test.want {
 				t.Fatal("wrong file key resolution", err)
 			}
 		})
 	}
-	writeConfig(t, path, "api_key = '$"+name+"'")
+	writeConfig(t, path, "[provider.jev]\napi_key = '$"+name+"'")
 	t.Setenv(name, "file-expanded-key")
 	t.Setenv("TS_JEV_API_KEY", "  $"+name+"  ")
 	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
@@ -79,7 +79,7 @@ func TestViewTemplateAndReferenceIndependentOfEnvironment(t *testing.T) {
 		t.Fatal("fresh template cannot be viewed", err)
 	}
 	const name = "JEVWISE_TEST_VIEW_KEY"
-	writeConfig(t, path, "api_key = '${"+name+"}'")
+	writeConfig(t, path, "[provider.jev]\napi_key = '${"+name+"}'")
 	t.Setenv(name, "")
 	before, err := View(path)
 	if err != nil {

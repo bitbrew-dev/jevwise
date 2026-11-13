@@ -12,14 +12,15 @@ import (
 
 // Default MCP listen settings. The server binds only literal loopback IPs.
 const (
-	DefaultMCPBaseURL = "127.0.0.1"
-	DefaultMCPPort    = 8080
+	DefaultMCPHost = "127.0.0.1"
+	DefaultMCPPort = 8080
 )
 
-var errMCPPort = errors.New("mcp_port must be an integer from 1 to 65535")
+var errHost = errors.New("mcp.host must be a literal loopback IP without scheme or port, such as 127.0.0.1")
+var errMCPPort = errors.New("mcp.port must be an integer from 1 to 65535")
 
-// MCPAddress resolves mcp_base_url and mcp_port (nonblank environment > TOML >
-// defaults) into a canonical loopback IP:port. It reads no other settings, so only a
+// MCPAddress resolves [mcp] host and port (nonblank TS_JEV_MCP_BASE_URL and
+// TS_JEV_MCP_PORT > TOML > defaults) into a canonical loopback IP:port. It reads no other settings, so only a
 // missing file falls back to defaults; unsafe files, invalid TOML or values fail.
 func MCPAddress(path string) (string, error) {
 	resolved, _, err := ResolvePath(path)
@@ -32,7 +33,7 @@ func MCPAddress(path string) (string, error) {
 	}
 	v := viper.New()
 	if err == nil {
-		if v, err = parseTOML(data); err != nil {
+		if v, err = readSettings(data); err != nil {
 			return "", err
 		}
 	}
@@ -40,41 +41,44 @@ func MCPAddress(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return mcpAddress(values["mcp_base_url"], values["mcp_port"])
+	return mcpAddress(values["host"], values["port"])
 }
+
+// mcpEnvNames maps [mcp] keys to their environment overrides, unchanged since the flat layout.
+var mcpEnvNames = map[string]string{"host": "TS_JEV_MCP_BASE_URL", "port": "TS_JEV_MCP_PORT"}
 
 // mcpValues reads both keys, accepting a TOML integer or string port, and
 // validates the result. Environment overrides apply only when env is true.
 func mcpValues(v *viper.Viper, env bool) (map[string]string, error) {
-	values := map[string]string{"mcp_base_url": DefaultMCPBaseURL, "mcp_port": strconv.Itoa(DefaultMCPPort)}
+	values := map[string]string{"host": DefaultMCPHost, "port": strconv.Itoa(DefaultMCPPort)}
 	for key := range values {
-		switch raw := v.Get(key).(type) {
+		switch raw := v.Get("mcp." + key).(type) {
 		case nil:
 		case string:
 			values[key] = strings.TrimSpace(raw)
 		case int64:
-			if key != "mcp_port" {
-				return nil, errors.New("mcp_base_url must be a string")
+			if key != "port" {
+				return nil, errHost
 			}
 			values[key] = strconv.FormatInt(raw, 10)
 		case int:
-			if key != "mcp_port" {
-				return nil, errors.New("mcp_base_url must be a string")
+			if key != "port" {
+				return nil, errHost
 			}
 			values[key] = strconv.Itoa(raw)
 		default:
-			if key == "mcp_port" {
+			if key == "port" {
 				return nil, errMCPPort
 			}
-			return nil, errors.New("mcp_base_url must be a string")
+			return nil, errHost
 		}
 		if env {
-			if value := strings.TrimSpace(os.Getenv("TS_JEV_" + strings.ToUpper(key))); value != "" {
+			if value := strings.TrimSpace(os.Getenv(mcpEnvNames[key])); value != "" {
 				values[key] = value
 			}
 		}
 	}
-	if _, err := mcpAddress(values["mcp_base_url"], values["mcp_port"]); err != nil {
+	if _, err := mcpAddress(values["host"], values["port"]); err != nil {
 		return nil, err
 	}
 	return values, nil
@@ -83,7 +87,7 @@ func mcpValues(v *viper.Viper, env bool) (map[string]string, error) {
 func mcpAddress(host, port string) (string, error) {
 	addr, err := netip.ParseAddr(host)
 	if err != nil || !addr.IsLoopback() || addr.Zone() != "" {
-		return "", errors.New("mcp_base_url must be a literal loopback IP without scheme or port, such as 127.0.0.1")
+		return "", errHost
 	}
 	n, err := strconv.ParseUint(port, 10, 16)
 	if err != nil || n == 0 {

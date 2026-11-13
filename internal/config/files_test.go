@@ -65,7 +65,7 @@ func TestInitPrivateTemplateNoOverwriteOrCredentialCopy(t *testing.T) {
 func TestViewOnlyKnownFileValuesAndRedactsSecrets(t *testing.T) {
 	cleanEnv(t)
 	t.Setenv("TS_JEV_MODEL", "environment-model")
-	path := writeConfig(t, filepath.Join(t.TempDir(), "config.toml"), "API_KEY='file-secret'\nmodel='file-model'\nextra='extra-secret'\n# comment-secret\n")
+	path := writeConfig(t, filepath.Join(t.TempDir(), "config.toml"), "extra='extra-secret'\n# comment-secret\n[provider.jev]\nAPI_KEY='file-secret'\nmodel='file-model'\n")
 	text, err := View(path)
 	if err != nil || !strings.Contains(text, `model = "file-model"`) || !strings.Contains(text, `editor = "vim"`) || !strings.Contains(text, "[redacted]") {
 		t.Fatal("wrong file view", err)
@@ -75,7 +75,7 @@ func TestViewOnlyKnownFileValuesAndRedactsSecrets(t *testing.T) {
 			t.Fatal("view leaked non-file or secret data")
 		}
 	}
-	for _, content := range []string{"api_key='parse-secret'\n[", "base_url='https://user:url-secret@example.com'", "editor=42"} {
+	for _, content := range []string{"[provider.jev]\napi_key='parse-secret'\n[", "[provider.jev]\nbase_url='https://user:url-secret@example.com'", "[general]\neditor=42"} {
 		writeConfig(t, path, content)
 		if out, err := View(path); out != "" || err == nil || strings.Contains(err.Error(), "secret") {
 			t.Fatal("invalid file accepted or leaked", err)

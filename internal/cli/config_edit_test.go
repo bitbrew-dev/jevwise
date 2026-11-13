@@ -39,16 +39,16 @@ func TestConfigEditSelectionStreamsAndRepair(t *testing.T) {
 			if mode == "explicit" {
 				path = filepath.Join(t.TempDir(), "selected file.toml")
 				args = append(args, "--config", path)
-				_ = os.WriteFile(config.LocalName, []byte("editor='wrong-local'"), 0600)
+				_ = os.WriteFile(config.LocalName, []byte("[general]\neditor='wrong-local'"), 0600)
 			}
 			if mode == "local" || mode == "global" || mode == "explicit" {
-				content, want = "editor='configured editor'", "configured editor"
+				content, want = "[general]\neditor='configured editor'", "configured editor"
 			}
 			if mode == "malformed" {
-				content = "api_key='private-secret'\n["
+				content = "[provider.jev]\napi_key='private-secret'\n["
 			}
 			if mode == "override" {
-				content, want = "editor=42", "override-editor"
+				content, want = "[general]\neditor=42", "override-editor"
 				args = append(args, "--editor", want)
 			}
 			_ = os.MkdirAll(filepath.Dir(path), 0700)
@@ -88,7 +88,7 @@ func TestConfigEditInvalidRequestsHelpAndSafeFailure(t *testing.T) {
 			t.Fatal("invalid edit accepted or leaked", err)
 		}
 	}
-	_ = os.WriteFile(config.LocalName, []byte("editor='vim'"), 0600)
+	_ = os.WriteFile(config.LocalName, []byte("[general]\neditor='vim'"), 0600)
 	if _, _, err := execute(editorRoot(t, func(context.Context, string, string, io.Reader, io.Writer, io.Writer) error {
 		return errors.New("private-secret")
 	}), "config", "edit"); err == nil || strings.Contains(err.Error(), "private-secret") {
@@ -139,7 +139,7 @@ func TestConfigEditorProcessNoShellAndCancellation(t *testing.T) {
 
 func TestConfigEditRejectsBadEditorAndCancelledRequests(t *testing.T) {
 	configEnvironment(t)
-	_ = os.WriteFile(config.LocalName, []byte("editor=42"), 0600)
+	_ = os.WriteFile(config.LocalName, []byte("[general]\neditor=42"), 0600)
 	for _, args := range [][]string{{"config", "edit"}, {"config", "edit", "--editor="}, {"config", "edit", "--config", "."}} {
 		if _, _, err := execute(editorRoot(t, func(context.Context, string, string, io.Reader, io.Writer, io.Writer) error {
 			t.Fatal("invalid editor request launched")

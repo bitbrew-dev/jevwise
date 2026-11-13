@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -19,9 +20,13 @@ type Config struct {
 	Timeout                          time.Duration
 }
 
+// Providers lists the accepted provider names; each has a [provider.<name>] table.
+var Providers = []string{"jev", "codex", "claude"}
+
 // Load applies changed flags > nonblank environment > TOML > defaults.
 // An empty path selects ./.jevwise.toml, then the Jevwise global file.
 // Only a missing default global file is optional; selected files never merge.
+// Provider settings come from [provider.<general.provider>]; flat files fail.
 // TOML API keys expand $NAME/${NAME}; environment and flag keys stay literal.
 // Neither global Viper state nor the supplied flags are mutated.
 func Load(path string, flags *pflag.FlagSet) (Config, error) {
@@ -35,57 +40,74 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 	}
 	v := viper.New()
 	if err == nil {
-		if v, err = parseTOML(data); err != nil {
+		if v, err = readSettings(data); err != nil {
 			return Config{}, err
 		}
 	}
-	defaults := defaultValues()
-	for key, value := range defaults {
-		v.SetDefault(key, value)
-	}
-	upstream := map[string]string{"api_key": "TYPESAFE_API_KEY", "base_url": "TYPESAFE_BASE_URL", "model": "TYPESAFE_DEFAULT_MODEL"}
-	env := make(map[string]any)
-	for key := range defaults {
-		names := []string{"TS_JEV_" + strings.ToUpper(key), upstream[key]}
-		if key == "api_key" {
-			names = []string{"JEV_API_KEY", "JEVWISE_API_KEY", "TS_JEV_API_KEY", "TYPESAFE_API_KEY"}
-		}
-		for _, name := range names {
-			if value := strings.TrimSpace(os.Getenv(name)); value != "" {
-				env[key] = value
-				break
-			}
-		}
-		if flags != nil {
-			if flag := flags.Lookup(strings.ReplaceAll(key, "_", "-")); flag != nil {
-				if err := v.BindPFlag(key, flag); err != nil {
-					return Config{}, fmt.Errorf("bind %s flag: %w", key, err)
-				}
-			}
-		}
-	}
-	// Merge instead of Set so changed bound flags retain their higher priority.
-	if err := v.MergeConfigMap(env); err != nil {
-		return Config{}, errors.New("cannot apply environment configuration")
-	}
-	apiKeyFromFile := env["api_key"] == nil
-	if flags != nil {
-		if flag := flags.Lookup("api-key"); flag != nil && flag.Changed {
-			apiKeyFromFile = false
-		}
-	}
 	values := make(map[string]string)
-	for key := range defaults {
-		value, ok := v.Get(key).(string)
-		if !ok {
-			return Config{}, fmt.Errorf("%s must be a string", key)
+	provider, _, err := resolveSetting(v, flags, "provider", "general.provider")
+	if err != nil {
+		return Config{}, err
+	}
+	if !slices.Contains(Providers, provider) {
+		return Config{}, errors.New("provider must be jev, codex or claude")
+	}
+	values["provider"] = provider
+	for _, key := range []string{"api_key", "base_url", "model", "timeout"} {
+		value, fromFile, err := resolveSetting(v, flags, key, "provider."+provider+"."+key)
+		if err != nil {
+			return Config{}, err
 		}
-		if key == "api_key" && apiKeyFromFile {
-			value = os.ExpandEnv(value)
+		if key == "api_key" && fromFile {
+			value = strings.TrimSpace(os.ExpandEnv(value))
 		}
-		values[key] = strings.TrimSpace(value)
+		values[key] = value
 	}
 	return fromValues(values)
+}
+
+// resolveSetting applies changed flag > nonblank environment > TOML path > default
+// for one setting and reports whether the value came from the file.
+func resolveSetting(v *viper.Viper, flags *pflag.FlagSet, key, path string) (string, bool, error) {
+	if flags != nil {
+		if flag := flags.Lookup(strings.ReplaceAll(key, "_", "-")); flag != nil && flag.Changed {
+			return strings.TrimSpace(flag.Value.String()), false, nil
+		}
+	}
+	for _, name := range envNames(key) {
+		if value := strings.TrimSpace(os.Getenv(name)); value != "" {
+			return value, false, nil
+		}
+	}
+	if value, ok, err := fileString(v, path); ok || err != nil {
+		return value, ok, err
+	}
+	return defaultValues()[key], false, nil
+}
+
+// fileString reads one string setting from the parsed file only.
+func fileString(v *viper.Viper, path string) (string, bool, error) {
+	raw := v.Get(path)
+	if raw == nil {
+		return "", false, nil
+	}
+	value, ok := raw.(string)
+	if !ok {
+		return "", false, fmt.Errorf("%s must be a string", path)
+	}
+	return strings.TrimSpace(value), true, nil
+}
+
+func envNames(key string) []string {
+	switch key {
+	case "api_key":
+		return []string{"JEV_API_KEY", "JEVWISE_API_KEY", "TS_JEV_API_KEY", "TYPESAFE_API_KEY"}
+	case "base_url":
+		return []string{"TS_JEV_BASE_URL", "TYPESAFE_BASE_URL"}
+	case "model":
+		return []string{"TS_JEV_MODEL", "TYPESAFE_DEFAULT_MODEL"}
+	}
+	return []string{"TS_JEV_" + strings.ToUpper(key)}
 }
 
 func defaultValues() map[string]string {

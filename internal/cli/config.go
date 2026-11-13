@@ -93,6 +93,33 @@ func newConfig() *cobra.Command {
 			}
 			return nil
 		}}
-	cmd.AddCommand(init, view, newConfigEdit(runConfigEditor))
+	migrate := &cobra.Command{Use: "migrate", Short: "Convert a flat configuration file to grouped tables, keeping a backup", Args: configNoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if err := cmd.Context().Err(); err != nil {
+				return err
+			}
+			path, err := configPathFlag(cmd)
+			if err != nil {
+				return err
+			}
+			path, _, err = config.ResolvePath(path)
+			if err != nil {
+				return err
+			}
+			debuglog.Event(cmd.Context(), "config.migrate.rewrite")
+			backup, err := config.Migrate(cmd.Context(), path)
+			message := fmt.Sprintf("Migrated configuration: %q\nOriginal kept at: %q\nComments were not carried over; check the result with jevwise config view.\nThe backup may contain your API key: delete it once the result is correct.\n", path, backup)
+			if errors.Is(err, config.ErrNotFlat) {
+				message, err = fmt.Sprintf("Configuration already uses grouped tables; nothing changed: %q\n", path), nil
+			}
+			if err != nil {
+				return err
+			}
+			if n, err := fmt.Fprint(cmd.OutOrStdout(), message); err != nil || n != len(message) {
+				return errors.New("configuration migrated but output failed")
+			}
+			return nil
+		}}
+	cmd.AddCommand(init, view, migrate, newConfigEdit(runConfigEditor))
 	return cmd
 }

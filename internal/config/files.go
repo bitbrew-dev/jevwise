@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -76,28 +77,38 @@ func fileValues(path string) (map[string]string, error) {
 	if err != nil {
 		return nil, errors.New("cannot read configuration file; initialize it first")
 	}
-	v, err := parseTOML(data)
+	v, err := readSettings(data)
 	if err != nil {
 		return nil, err
 	}
-	defaults := defaultValues()
-	defaults["editor"] = "vim"
-	values := make(map[string]string)
-	for key, value := range defaults {
-		v.SetDefault(key, value)
-		value, ok := v.Get(key).(string)
-		if !ok {
-			return nil, errors.New("configuration settings must be strings")
+	values := defaultValues()
+	values["editor"] = "vim"
+	set := func(key, path string) error {
+		value, ok, err := fileString(v, path)
+		if ok {
+			values[key] = value
 		}
-		values[key] = strings.TrimSpace(value)
+		return err
+	}
+	if err := set("provider", "general.provider"); err != nil {
+		return nil, err
+	}
+	if !slices.Contains(Providers, values["provider"]) {
+		return nil, errors.New("provider must be jev, codex or claude")
+	}
+	for _, key := range []string{"api_key", "base_url", "model", "timeout"} {
+		if err := set(key, "provider."+values["provider"]+"."+key); err != nil {
+			return nil, err
+		}
+	}
+	if err := set("editor", "general.editor"); err != nil {
+		return nil, err
 	}
 	mcp, err := mcpValues(v, false)
 	if err != nil {
 		return nil, err
 	}
-	for key, value := range mcp {
-		values[key] = value
-	}
+	values["host"], values["port"] = mcp["host"], mcp["port"]
 	debug, err := debugValue(v)
 	if err != nil {
 		return nil, err
@@ -106,9 +117,10 @@ func fileValues(path string) (map[string]string, error) {
 	return values, nil
 }
 
-// View shows known file values/defaults, never environment overrides, arbitrary
-// extra keys or comments. Only api_key is redacted; URL userinfo/query/fragment
-// are refused before display. Other settings must not contain credentials.
+// View shows known file values/defaults as grouped tables, never environment
+// overrides, arbitrary extra keys, other provider tables or comments. Only api_key
+// is redacted; URL userinfo/query/fragment are refused before display. Other
+// settings must not contain credentials.
 func View(path string) (string, error) {
 	values, err := fileValues(path)
 	if err != nil {
@@ -119,12 +131,25 @@ func View(path string) (string, error) {
 	}
 	values["api_key"] = "[redacted]"
 	var out strings.Builder
-	for _, key := range []string{"api_key", "base_url", "model", "provider", "timeout", "editor", "mcp_base_url", "mcp_port", "debug"} {
-		value, _ := json.Marshal(values[key])
-		if key == "mcp_port" || key == "debug" {
-			value = []byte(values[key])
+	for i, section := range []struct {
+		name string
+		keys []string
+	}{
+		{"general", []string{"provider", "debug", "editor"}},
+		{"mcp", []string{"host", "port"}},
+		{"provider." + values["provider"], []string{"api_key", "base_url", "model", "timeout"}},
+	} {
+		if i > 0 {
+			out.WriteString("\n")
 		}
-		out.WriteString(key + " = " + string(value) + "\n")
+		out.WriteString("[" + section.name + "]\n")
+		for _, key := range section.keys {
+			value, _ := json.Marshal(values[key])
+			if key == "port" || key == "debug" {
+				value = []byte(values[key])
+			}
+			out.WriteString(key + " = " + string(value) + "\n")
+		}
 	}
 	return out.String(), nil
 }

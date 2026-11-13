@@ -41,7 +41,7 @@ func TestConfigInitTargetsNoOverwriteAndAutoLoad(t *testing.T) {
 				path = filepath.Join(t.TempDir(), "selected.toml")
 				args = append(args, "--config", path)
 			} else {
-				_ = os.WriteFile(config.LocalName, []byte("model='local'"), 0600)
+				_ = os.WriteFile(config.LocalName, []byte("[provider.jev]\nmodel='local'"), 0600)
 			}
 			out, stderr, err := execute(configRoot(t), args...)
 			data, readErr := os.ReadFile(path)
@@ -82,13 +82,13 @@ func TestConfigHelpValidationAndSafeView(t *testing.T) {
 			t.Fatal("invalid config request accepted or leaked", err)
 		}
 	}
-	_ = os.WriteFile(config.LocalName, []byte("api_key='private-secret'\nmodel='file-model'"), 0600)
+	_ = os.WriteFile(config.LocalName, []byte("[provider.jev]\napi_key='private-secret'\nmodel='file-model'"), 0600)
 	t.Setenv("TS_JEV_MODEL", "environment-model")
 	out, _, err := execute(configRoot(t), "config", "view", "--api-key=flag-secret")
 	if err != nil || strings.Contains(out, "secret") || strings.Contains(out, "environment-model") || !strings.Contains(out, "file-model") {
 		t.Fatal("view exposed credentials or effective overrides", err)
 	}
-	_ = os.WriteFile(config.LocalName, []byte("api_key='private-secret'\n["), 0600)
+	_ = os.WriteFile(config.LocalName, []byte("[provider.jev]\napi_key='private-secret'\n["), 0600)
 	if out, _, err := execute(configRoot(t), "config", "view"); err == nil || out != "" || strings.Contains(err.Error(), "private-secret") {
 		t.Fatal("parser diagnostic leaked", err)
 	}

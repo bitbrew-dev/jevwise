@@ -15,18 +15,18 @@ func TestDebugPrecedenceAndValidation(t *testing.T) {
 	}
 	path := filepath.Join(dir, "config.toml")
 	for content, want := range map[string]bool{
-		"debug = true\n":                      true,
-		"debug = false\n":                     false,
-		"debug = 'true'\n":                    true,
-		"timeout = 'invalid'\ndebug = true\n": true,
-		"model = 'unrelated'\n":               false,
+		"[general]\ndebug = true\n":                                      true,
+		"[general]\ndebug = false\n":                                     false,
+		"[general]\ndebug = 'true'\n":                                    true,
+		"[general]\ndebug = true\n[provider.jev]\ntimeout = 'invalid'\n": true,
+		"[provider.jev]\nmodel = 'unrelated'\n":                          false,
 	} {
 		if enabled, err := Debug(writeConfig(t, path, content)); err != nil || enabled != want {
 			t.Fatal("wrong debug value", content, err)
 		}
 	}
 	t.Setenv("TS_JEV_DEBUG", "false")
-	if enabled, err := Debug(writeConfig(t, path, "debug = true\n")); err != nil || enabled {
+	if enabled, err := Debug(writeConfig(t, path, "[general]\ndebug = true\n")); err != nil || enabled {
 		t.Fatal("environment did not override TOML", err)
 	}
 	t.Setenv("TS_JEV_DEBUG", "maybe")
@@ -34,7 +34,7 @@ func TestDebugPrecedenceAndValidation(t *testing.T) {
 		t.Fatal("invalid environment debug accepted")
 	}
 	t.Setenv("TS_JEV_DEBUG", "")
-	for _, content := range []string{"debug = 'maybe'\n", "debug = 1\n", "debug = [\n"} {
+	for _, content := range []string{"[general]\ndebug = 'maybe'\n", "[general]\ndebug = 1\n", "[general]\ndebug = [\n"} {
 		if _, err := Debug(writeConfig(t, path, content)); err == nil {
 			t.Fatal("invalid debug accepted", content)
 		}

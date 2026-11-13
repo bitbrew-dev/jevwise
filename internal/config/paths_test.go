@@ -13,8 +13,8 @@ import (
 func TestLocalDiscoveryPrecedenceAndNoMerge(t *testing.T) {
 	cleanEnv(t)
 	global, _ := GlobalPath()
-	writeConfig(t, global, "model='global'\napi_key='global-secret'")
-	writeConfig(t, LocalName, "model='local'")
+	writeConfig(t, global, "[provider.jev]\nmodel='global'\napi_key='global-secret'")
+	writeConfig(t, LocalName, "[provider.jev]\nmodel='local'")
 	cfg, err := Load("", nil)
 	if err != nil || cfg.Model != "local" || cfg.APIKey != "" {
 		t.Fatal("local file did not replace global", err)
@@ -49,10 +49,10 @@ func TestLocalDiscoveryFailsClosedAndDoesNotSearchAncestors(t *testing.T) {
 		t.Run(mode, func(t *testing.T) {
 			cleanEnv(t)
 			global, _ := GlobalPath()
-			writeConfig(t, global, "model='global'")
+			writeConfig(t, global, "[provider.jev]\nmodel='global'")
 			switch mode {
 			case "invalid":
-				writeConfig(t, LocalName, "api_key='private-secret'\n[")
+				writeConfig(t, LocalName, "[provider.jev]\napi_key='private-secret'\n[")
 			case "oversize":
 				writeConfig(t, LocalName, strings.Repeat("x", MaxFileBytes+1))
 			case "directory":
@@ -71,7 +71,7 @@ func TestLocalDiscoveryFailsClosedAndDoesNotSearchAncestors(t *testing.T) {
 		})
 	}
 	cleanEnv(t)
-	writeConfig(t, LocalName, "model='ancestor'")
+	writeConfig(t, LocalName, "[provider.jev]\nmodel='ancestor'")
 	// A nested directory of the current project must not inherit its file.
 	cwd, _ := os.Getwd()
 	child := filepath.Join(cwd, "child")

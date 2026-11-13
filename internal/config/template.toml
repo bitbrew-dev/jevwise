@@ -1,12 +1,16 @@
 # Optional CLI configuration. Prefer environment credentials.
+[general]
+provider = "jev"
+debug = false
+editor = "vim"
+
+# Local MCP server: literal loopback IP (no scheme) and port.
+[mcp]
+host = "127.0.0.1"
+port = 8080
+
+[provider.jev]
 api_key = ""
 base_url = "https://api.typesafe.ai"
 model = "jev-latest"
-provider = "jev"
 timeout = "10s"
-editor = "vim"
-# Local MCP server: literal loopback IP (no scheme) and port.
-mcp_base_url = "127.0.0.1"
-mcp_port = 8080
-# Structured debug logs on stderr; --debug or --verbose overrides.
-debug = false

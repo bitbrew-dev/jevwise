@@ -17,7 +17,7 @@ func TestDecideRejectsMissingOrBlankExpandedKey(t *testing.T) {
 	configEnvironment(t)
 	const name = "JEVWISE_TEST_DECISION_KEY"
 	path := filepath.Join(t.TempDir(), "config.toml")
-	if err := os.WriteFile(path, []byte("api_key = '${"+name+"}'"), 0600); err != nil {
+	if err := os.WriteFile(path, []byte("[provider.jev]\napi_key = '${"+name+"}'"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	for _, value := range []string{"", " \t\n "} {
@@ -32,7 +32,7 @@ func TestDecideRejectsMissingOrBlankExpandedKey(t *testing.T) {
 func TestHiddenConfigCustomKeyAndView(t *testing.T) {
 	configEnvironment(t)
 	t.Setenv("JEV_MCP_API_KEY", "synthetic-custom-key")
-	if err := os.WriteFile(config.LocalName, []byte("api_key='${JEV_MCP_API_KEY}'\nmodel='hidden-model'"), 0600); err != nil {
+	if err := os.WriteFile(config.LocalName, []byte("[provider.jev]\napi_key='${JEV_MCP_API_KEY}'\nmodel='hidden-model'"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile("configs.toml", []byte("[invalid TOML"), 0600); err != nil {
@@ -73,7 +73,7 @@ func TestConfigGlobalHomeAndTildeInitViewEdit(t *testing.T) {
 	if _, err := os.Stat(path); err != nil {
 		t.Fatal("init created literal tilde directory instead of global file")
 	}
-	if err := os.WriteFile(path, []byte("model='home-global'\napi_key='$JEV_MCP_API_KEY'"), 0600); err != nil {
+	if err := os.WriteFile(path, []byte("[provider.jev]\nmodel='home-global'\napi_key='$JEV_MCP_API_KEY'"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	for _, args := range [][]string{{"config", "view"}, {"config", "view", "--config", literal}} {

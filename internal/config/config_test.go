@@ -45,8 +45,8 @@ func TestDefaultsAndDiscovery(t *testing.T) {
 	}
 	xdg := filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "jevwise", GlobalName)
 	home := filepath.Join(os.Getenv("HOME"), ".config", "jevwise", GlobalName)
-	writeConfig(t, xdg, `model = "xdg"`)
-	writeConfig(t, home, `model = "home"`)
+	writeConfig(t, xdg, `[provider.jev]`+"\n"+`model = "xdg"`)
+	writeConfig(t, home, `[provider.jev]`+"\n"+`model = "home"`)
 	got, err = Load("", nil)
 	if err != nil || got.Model != "xdg" {
 		t.Fatalf("XDG: %+v %v", got, err)
@@ -67,7 +67,7 @@ func TestDefaultsAndDiscovery(t *testing.T) {
 
 func TestPrecedenceAndIsolation(t *testing.T) {
 	cleanEnv(t)
-	path := writeConfig(t, filepath.Join(t.TempDir(), "config.toml"), "api_key='file'\nbase_url='https://file.test'\nmodel='file'\nprovider='codex'\ntimeout='1s'")
+	path := writeConfig(t, filepath.Join(t.TempDir(), "config.toml"), "[general]\nprovider='codex'\n[provider.codex]\napi_key='file'\nbase_url='https://file.test'\nmodel='file'\ntimeout='1s'")
 	file, err := Load(path, nil)
 	if err != nil || file.APIKey != "file" || file.Provider != "codex" || file.Timeout != time.Second {
 		t.Fatalf("file: %+v %v", file, err)
@@ -116,7 +116,7 @@ func TestInvalidFilesAndValues(t *testing.T) {
 	if _, err := Load(filepath.Join(t.TempDir(), "missing.toml"), nil); err == nil {
 		t.Fatal("explicit missing file accepted")
 	}
-	for _, content := range []string{"api_key = 'secret'\n[", "timeout='garbage'", "timeout='0s'", "timeout='-1s'", "timeout=10", "base_url='/relative'", "base_url='ftp://example.com'", "base_url='https://user:secret@example.com'", "base_url='https://example.com?q=secret'", "provider='other'", "model=' '", "api_key=42"} {
+	for _, content := range []string{"[provider.jev]\napi_key = 'secret'\n[", "[provider.jev]\ntimeout='garbage'", "[provider.jev]\ntimeout='0s'", "[provider.jev]\ntimeout='-1s'", "[provider.jev]\ntimeout=10", "[provider.jev]\nbase_url='/relative'", "[provider.jev]\nbase_url='ftp://example.com'", "[provider.jev]\nbase_url='https://user:secret@example.com'", "[provider.jev]\nbase_url='https://example.com?q=secret'", "[general]\nprovider='other'", "[provider.jev]\nmodel=' '", "[provider.jev]\napi_key=42"} {
 		t.Run(content, func(t *testing.T) {
 			path := writeConfig(t, filepath.Join(t.TempDir(), "config.toml"), content)
 			if _, err := Load(path, nil); err == nil || strings.Contains(err.Error(), "secret") {
@@ -136,5 +136,27 @@ func TestInvalidFilesAndValues(t *testing.T) {
 	writeConfig(t, path, "[")
 	if _, err := Load("", nil); err == nil {
 		t.Fatal("invalid discovered file accepted")
+	}
+}
+
+func TestProviderTablesAreIsolated(t *testing.T) {
+	cleanEnv(t)
+	path := writeConfig(t, filepath.Join(t.TempDir(), "config.toml"), "[provider.jev]\napi_key='jev-only-key'\nmodel='jev-model'\n[provider.codex]\nmodel='codex-model'\n[provider.gemini]\napi_key='gemini-only-key'\nmodel='gemini-decision-1'\n")
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flags.String("provider", "jev", "")
+	if err := flags.Parse([]string{"--provider=codex"}); err != nil {
+		t.Fatal(err)
+	}
+	codex, err := Load(path, flags)
+	if err != nil || codex.Provider != "codex" || codex.Model != "codex-model" || codex.APIKey != "" {
+		t.Fatal("selected provider read another provider table", err)
+	}
+	jev, err := Load(path, nil)
+	if err != nil || jev.Model != "jev-model" || jev.APIKey != "jev-only-key" {
+		t.Fatal("default provider table not used or unknown provider table rejected", err)
+	}
+	text, err := View(path)
+	if err != nil || strings.Contains(text, "gemini") || strings.Contains(text, "codex-model") {
+		t.Fatal("view printed an unselected provider table", err)
 	}
 }

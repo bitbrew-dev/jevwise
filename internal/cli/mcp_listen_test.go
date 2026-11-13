@@ -26,11 +26,11 @@ func TestMCPListenFromConfigMatchesFlag(t *testing.T) {
 	decisionEnvironment(t)
 	t.Setenv("JEV_MCP_TOKEN", "fixture-agent-token")
 	factory := func(config.Config) (service.DecisionService, func(), error) { return mcpFixtureService(t), nil, nil }
-	path := mcpListenConfig(t, "api_key = 'fixture-upstream-key'\nmcp_base_url = '127.0.0.1'\nmcp_port = 9090\n")
+	path := mcpListenConfig(t, "[mcp]\nhost = '127.0.0.1'\nport = 9090\n[provider.jev]\napi_key = 'fixture-upstream-key'\n")
 	for _, args := range [][]string{
 		{"mcp", "--config", path},
 		{"mcp", "--config", path, "--listen", "127.0.0.1:9090"},
-		{"mcp", "--config", mcpListenConfig(t, "api_key = 'fixture-upstream-key'\nmcp_port = 7070\n"), "--listen", "127.0.0.1:9090"},
+		{"mcp", "--config", mcpListenConfig(t, "[mcp]\nport = 7070\n[provider.jev]\napi_key = 'fixture-upstream-key'\n"), "--listen", "127.0.0.1:9090"},
 	} {
 		address := ""
 		run := func(ctx context.Context, _ service.DecisionService, _ time.Duration, options mcpserver.RunOptions) error {
@@ -45,8 +45,8 @@ func TestMCPListenFromConfigMatchesFlag(t *testing.T) {
 		t.Fatal("invalid MCP setting started runner")
 		return nil
 	}
-	for _, content := range []string{"mcp_base_url = 'http://127.0.0.1'\n", "mcp_port = 0\n"} {
-		if _, _, err := execute(mcpRoot(factory, run), "mcp", "--config", mcpListenConfig(t, "api_key = 'k'\n"+content)); err == nil {
+	for _, content := range []string{"[mcp]\nhost = 'http://127.0.0.1'\n", "[mcp]\nport = 0\n"} {
+		if _, _, err := execute(mcpRoot(factory, run), "mcp", "--config", mcpListenConfig(t, "[provider.jev]\napi_key = 'k'\n"+content)); err == nil {
 			t.Fatal("invalid MCP setting accepted", content)
 		}
 	}
@@ -58,8 +58,8 @@ func TestMCPInstallListenFromConfig(t *testing.T) {
 		args    []string
 		want    string
 	}{
-		{"mcp_port = 9090\n", nil, "http://127.0.0.1:9090/mcp"},
-		{"mcp_port = 9090\ntimeout = 'invalid'\n", []string{"--listen", "127.0.0.1:7070"}, "http://127.0.0.1:7070/mcp"},
+		{"[mcp]\nport = 9090\n", nil, "http://127.0.0.1:9090/mcp"},
+		{"[mcp]\nport = 9090\n[provider.jev]\ntimeout = 'invalid'\n", []string{"--listen", "127.0.0.1:7070"}, "http://127.0.0.1:7070/mcp"},
 	} {
 		url := ""
 		run := func(_ context.Context, _ string, args ...string) ([]byte, error) {
@@ -72,7 +72,7 @@ func TestMCPInstallListenFromConfig(t *testing.T) {
 			t.Fatal("install endpoint not resolved from config or flag", url, err)
 		}
 	}
-	if _, _, err := execute(installerRoot(t, nil), "mcp", "install", "claude", "--config", mcpListenConfig(t, "mcp_base_url = 'localhost'\n")); err == nil {
+	if _, _, err := execute(installerRoot(t, nil), "mcp", "install", "claude", "--config", mcpListenConfig(t, "[mcp]\nhost = 'localhost'\n")); err == nil {
 		t.Fatal("install accepted non-literal MCP host")
 	}
 }

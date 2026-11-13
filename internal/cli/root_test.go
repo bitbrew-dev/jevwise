@@ -93,7 +93,7 @@ func TestConfigHelperAndIsolatedRoots(t *testing.T) {
 
 func TestConfigErrorsAreDeferredAndSafe(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "broken.toml")
-	if err := os.WriteFile(path, []byte("api_key = private-secret\n"), 0600); err != nil {
+	if err := os.WriteFile(path, []byte("[provider.jev]\napi_key = private-secret\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	for _, args := range [][]string{{"check", "--config", path}, {"check", "--timeout", "invalid"}, {"check", "--provider", "unknown"}} {

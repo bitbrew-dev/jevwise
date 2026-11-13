@@ -9,9 +9,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-var errDebug = errors.New("debug must be true or false")
+var errDebug = errors.New("general.debug must be true or false")
 
-// Debug resolves the debug setting (nonblank TS_JEV_DEBUG > TOML > false). It reads
+// Debug resolves general.debug (nonblank TS_JEV_DEBUG > TOML > false). It reads
 // no other settings; only a missing file falls back to false.
 func Debug(path string) (bool, error) {
 	resolved, _, err := ResolvePath(path)
@@ -24,7 +24,7 @@ func Debug(path string) (bool, error) {
 	}
 	v := viper.New()
 	if err == nil {
-		if v, err = parseTOML(data); err != nil {
+		if v, err = readSettings(data); err != nil {
 			return false, err
 		}
 	}
@@ -41,7 +41,7 @@ func Debug(path string) (bool, error) {
 }
 
 func debugValue(v *viper.Viper) (bool, error) {
-	switch raw := v.Get("debug").(type) {
+	switch raw := v.Get("general.debug").(type) {
 	case nil:
 		return false, nil
 	case bool:

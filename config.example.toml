@@ -1,13 +1,18 @@
 # Optional CLI configuration. Prefer an environment variable for credentials.
-# Copy to ~/.config/ts-jev/config.toml, or select with --config.
-api_key = ""
-base_url = "https://api.typesafe.ai"
-model = "jev-latest"
+# Copy to ~/.config/jevwise/jevwise.toml, or select with --config.
+[general]
 provider = "jev"
-timeout = "10s"
-editor = "vim"
-# Local MCP server: literal loopback IP (no scheme) and port.
-mcp_base_url = "127.0.0.1"
-mcp_port = 8080
 # Structured debug logs on stderr; --debug or --verbose overrides.
 debug = false
+editor = "vim"
+
+# Local MCP server: literal loopback IP (no scheme) and port.
+[mcp]
+host = "127.0.0.1"
+port = 8080
+
+[provider.jev]
+api_key = "$JEV_API_KEY"
+base_url = "https://api.typesafe.ai"
+model = "jev-latest"
+timeout = "10s"

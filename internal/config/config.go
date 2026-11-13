@@ -2,7 +2,6 @@
 package config
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"net/url"
@@ -26,11 +25,6 @@ type Config struct {
 // TOML API keys expand $NAME/${NAME}; environment and flag keys stay literal.
 // Neither global Viper state nor the supplied flags are mutated.
 func Load(path string, flags *pflag.FlagSet) (Config, error) {
-	v := viper.New()
-	defaults := defaultValues()
-	for key, value := range defaults {
-		v.SetDefault(key, value)
-	}
 	path, required, err := ResolvePath(path)
 	if err != nil {
 		return Config{}, err
@@ -39,10 +33,15 @@ func Load(path string, flags *pflag.FlagSet) (Config, error) {
 	if err != nil && (required || !errors.Is(err, os.ErrNotExist)) {
 		return Config{}, errors.New("cannot read configuration: file missing, unreadable or unsafe")
 	}
-	// Parse only these selected bytes. Never use Viper search paths or ReadInConfig.
-	v.SetConfigType("toml")
-	if err == nil && v.ReadConfig(bytes.NewReader(data)) != nil {
-		return Config{}, errors.New("cannot read configuration: invalid TOML")
+	v := viper.New()
+	if err == nil {
+		if v, err = parseTOML(data); err != nil {
+			return Config{}, err
+		}
+	}
+	defaults := defaultValues()
+	for key, value := range defaults {
+		v.SetDefault(key, value)
 	}
 	upstream := map[string]string{"api_key": "TYPESAFE_API_KEY", "base_url": "TYPESAFE_BASE_URL", "model": "TYPESAFE_DEFAULT_MODEL"}
 	env := make(map[string]any)

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	_ "embed"
@@ -12,8 +11,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/spf13/viper"
 )
 
 //go:embed template.toml
@@ -79,10 +76,9 @@ func fileValues(path string) (map[string]string, error) {
 	if err != nil {
 		return nil, errors.New("cannot read configuration file; initialize it first")
 	}
-	v := viper.New()
-	v.SetConfigType("toml")
-	if err := v.ReadConfig(bytes.NewReader(data)); err != nil {
-		return nil, errors.New("cannot read configuration: invalid TOML")
+	v, err := parseTOML(data)
+	if err != nil {
+		return nil, err
 	}
 	defaults := defaultValues()
 	defaults["editor"] = "vim"

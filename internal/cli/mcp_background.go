@@ -20,7 +20,7 @@ import (
 type mcpStarter func(context.Context, string, daemon.Bootstrap, func(daemon.Bootstrap) error, func(context.Context, bool) error) (daemon.StartResult, error)
 
 func runMCPBackground(cmd *cobra.Command, cfg config.Config, address, agentToken, runtimeDir string, start mcpStarter) error {
-	if cfg.Provider != "jev" {
+	if !mcpProvider(cfg.Provider) {
 		return &decisionError{"provider is not implemented", service.ErrNotImplemented}
 	}
 	if cfg.Validate() != nil || cfg.Timeout > time.Duration(1<<63-1)-30*time.Second || mcpserver.ValidateToken(agentToken) != nil {

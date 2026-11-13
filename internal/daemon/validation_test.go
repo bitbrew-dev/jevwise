@@ -26,6 +26,11 @@ func TestBootstrapValidationIsPure(t *testing.T) {
 	if err := ValidateBootstrap(boot); err != nil || boot != before {
 		t.Fatal("valid bootstrap changed or failed", err)
 	}
+	boot.Config.Provider = "gemini"
+	if err := ValidateBootstrap(boot); err != nil {
+		t.Fatal("gemini bootstrap rejected", err)
+	}
+	boot = before
 	if _, err := os.Lstat(boot.RuntimeDir); !errors.Is(err, os.ErrNotExist) {
 		t.Fatal("validation created runtime storage")
 	}

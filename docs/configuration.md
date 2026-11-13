@@ -45,7 +45,24 @@ Provider environment names and defaults. Each provider reads only its own names,
 | `gemini` | `GOOGLE_API_KEY`, then `GEMINI_API_KEY` (as in google-genai) | `GOOGLE_GEMINI_BASE_URL`; `https://generativelanguage.googleapis.com` | None; `gemini-decision-1` |
 
 - Changed flags apply to the selected provider. Other environment names are unchanged from the flat layout, so `TS_JEV_MCP_BASE_URL` still sets `mcp.host`.
-- The `gemini` provider name is reserved in this release: selecting it reports "provider is not implemented" until the Gemini decision service is wired in.
+
+### Gemini Decisions provider
+
+Select Google's [Gemini Decisions API](https://blog.google/innovation-and-ai/technology/developers-tools/gemini-decisions-api/) (`gemini-decision-1`) for `decide` and MCP:
+
+```toml
+[general]
+provider = "gemini"
+
+[provider.gemini]
+api_key = "$GEMINI_API_KEY"
+```
+
+- Or select it per call with `--provider gemini`, keeping the Jev settings in place. The key comes from `GOOGLE_API_KEY`, then `GEMINI_API_KEY`, then TOML; never from Jev names.
+- Each decision sends `POST /v1beta/decisions` with one `choice` question: the prompt is the shared `input`, every option is a criterion with an empty description, and a fixed instruction asks for the best-fitting option. At most 255 options.
+- The response carries no model name, so output reports the configured model. Probabilities and confidence are returned as received, never normalized.
+- Inputs blocked by Google's content filters fail the decision. Upstream error messages are not shown or logged, as they may echo input.
+- The endpoint is `v1beta`: Google may change it. Ordinary decisions bill input tokens to your Google account.
 - `mcp.host` is a literal loopback IP without scheme or port (`127.0.0.1`, `::1`); `http://`, `localhost` and non-loopback hosts fail. `mcp.port` is an integer from 1 to 65535 (`port = 8080` or `"8080"`). `jevwise mcp` and `jevwise mcp install` read only these two keys for the address; a changed `--listen` overrides both, so `jevwise mcp --listen 127.0.0.1:9090` equals `jevwise mcp` with `port = 9090` under `[mcp]`.
 
 ### Upgrading a flat configuration

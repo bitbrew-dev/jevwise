@@ -9,6 +9,7 @@ import (
 
 	"github.com/bitbrew-dev/jevwise/internal/config"
 	"github.com/bitbrew-dev/jevwise/internal/debuglog"
+	"github.com/bitbrew-dev/jevwise/internal/gemini"
 	"github.com/bitbrew-dev/jevwise/internal/service"
 	"github.com/bitbrew-dev/jevwise/pkg/typesafe"
 	"github.com/spf13/cobra"
@@ -29,7 +30,7 @@ func (e *decisionError) Error() string { return e.message }
 func (e *decisionError) Unwrap() error { return e.cause }
 
 func defaultServiceFactory(cfg config.Config) (service.DecisionService, func(), error) {
-	if cfg.Provider != "jev" {
+	if cfg.Provider != "jev" && cfg.Provider != "gemini" {
 		svc, err := service.New(cfg.Provider, nil)
 		return svc, nil, err
 	}
@@ -41,6 +42,14 @@ func defaultServiceFactory(cfg config.Config) (service.DecisionService, func(), 
 		if b < 0x21 || b > 0x7e {
 			return nil, nil, &initializationError{kind: "api_key_invalid"}
 		}
+	}
+	if cfg.Provider == "gemini" {
+		client, err := gemini.New(gemini.Options{APIKey: cfg.APIKey, BaseURL: cfg.BaseURL, Model: cfg.Model, Timeout: cfg.Timeout})
+		if err != nil {
+			return nil, nil, &initializationError{kind: "client_configuration", cause: err}
+		}
+		svc, err := service.NewGemini(client.Choose, cfg.Model)
+		return svc, nil, err
 	}
 	client, err := typesafe.NewClient(typesafe.ClientOptions{APIKey: cfg.APIKey,
 		BaseURL: cfg.BaseURL, DefaultModel: cfg.Model, Timeout: cfg.Timeout})
@@ -59,7 +68,7 @@ func newDecide(factory ServiceFactory) *cobra.Command {
 	var prompt string
 	var options []string
 	var stdin bool
-	cmd := &cobra.Command{Use: "decide", Short: "Return Jev's probabilities for repeated options",
+	cmd := &cobra.Command{Use: "decide", Short: "Return the provider's probabilities for repeated options",
 		Args: func(_ *cobra.Command, args []string) error {
 			if len(args) != 0 {
 				return errors.New("decide does not accept positional arguments")

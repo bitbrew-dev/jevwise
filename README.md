@@ -73,6 +73,7 @@ api_key = "$ABCD_TOKEN"
 - Only the TOML `api_key` expands environment references. Unset variables expand to empty; Jev service initialization requires a nonblank key.
 - Changed `--api-key` flags override nonblank API environment values, which override TOML. Direct environment and flag values stay literal.
 - API fallback names, in order: `JEVWISE_API_KEY`, `TS_JEV_API_KEY`, `TYPESAFE_API_KEY`. The standalone Go SDK retains `TYPESAFE_API_KEY` as its environment fallback. See [configuration](docs/configuration.md).
+- To decide with Google's Gemini Decisions API instead, set `GOOGLE_API_KEY` or `GEMINI_API_KEY` and use `--provider gemini` or `provider = "gemini"` under `[general]`. See [Gemini Decisions provider](docs/configuration.md#gemini-decisions-provider).
 
 ### Local MCP authentication
 

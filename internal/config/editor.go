@@ -1,11 +1,8 @@
 package config
 
 import (
-	"bytes"
 	"errors"
 	"strings"
-
-	"github.com/spf13/viper"
 )
 
 // Editor reads only the selected file's editor setting, not environment/SDK
@@ -15,9 +12,8 @@ func Editor(path string) (string, error) {
 	if err != nil {
 		return "", errors.New("cannot read configuration to choose editor; use --editor to repair")
 	}
-	v := viper.New()
-	v.SetConfigType("toml")
-	if err := v.ReadConfig(bytes.NewReader(data)); err != nil {
+	v, err := parseTOML(data)
+	if err != nil {
 		return "vim", nil
 	}
 	value := v.Get("editor")

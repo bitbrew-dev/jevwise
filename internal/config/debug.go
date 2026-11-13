@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"errors"
 	"os"
 	"strconv"
@@ -24,9 +23,10 @@ func Debug(path string) (bool, error) {
 		return false, errors.New("cannot read configuration: file unreadable or unsafe")
 	}
 	v := viper.New()
-	v.SetConfigType("toml")
-	if err == nil && v.ReadConfig(bytes.NewReader(data)) != nil {
-		return false, errors.New("cannot read configuration: invalid TOML")
+	if err == nil {
+		if v, err = parseTOML(data); err != nil {
+			return false, err
+		}
 	}
 	enabled, err := debugValue(v)
 	if err != nil {

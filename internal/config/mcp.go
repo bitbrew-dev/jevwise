@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"errors"
 	"net/netip"
 	"os"
@@ -23,8 +22,6 @@ var errMCPPort = errors.New("mcp_port must be an integer from 1 to 65535")
 // defaults) into a canonical loopback IP:port. It reads no other settings, so only a
 // missing file falls back to defaults; unsafe files, invalid TOML or values fail.
 func MCPAddress(path string) (string, error) {
-	v := viper.New()
-	v.SetConfigType("toml")
 	resolved, _, err := ResolvePath(path)
 	if err != nil {
 		return "", err
@@ -33,8 +30,11 @@ func MCPAddress(path string) (string, error) {
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return "", errors.New("cannot read configuration: file unreadable or unsafe")
 	}
-	if err == nil && v.ReadConfig(bytes.NewReader(data)) != nil {
-		return "", errors.New("cannot read configuration: invalid TOML")
+	v := viper.New()
+	if err == nil {
+		if v, err = parseTOML(data); err != nil {
+			return "", err
+		}
 	}
 	values, err := mcpValues(v, true)
 	if err != nil {

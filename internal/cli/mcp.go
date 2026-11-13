@@ -63,7 +63,7 @@ func newMCPWithBackground(factory ServiceFactory, run mcpRunner, start mcpStarte
 				return err
 			}
 			if token == "" {
-				if cfg.Provider != "jev" {
+				if !mcpProvider(cfg.Provider) {
 					return initializationFailure(ctx, "provider is not implemented", service.ErrNotImplemented)
 				}
 				if cfg.APIKey == "" {
@@ -164,3 +164,6 @@ func mcpListenAddress(cmd *cobra.Command, listen string) (string, error) {
 	}
 	return mcpserver.ValidateAddress(listen)
 }
+
+// mcpProvider reports whether MCP can serve decisions for the provider.
+func mcpProvider(provider string) bool { return provider == "jev" || provider == "gemini" }

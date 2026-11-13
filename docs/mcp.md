@@ -52,7 +52,7 @@ jevwise mcp stop
 
 For token-safe Codex and Claude Code setup, discovery checks and cleanup, follow the [local agent onboarding guide](mcp-agents.md).
 
-Connect an HTTP-capable local agent to `http://127.0.0.1:8080/mcp`, supplying `Authorization: Bearer <agent-token>`. The only tool is `decide`: send `prompt` and at least two distinct `options`. Results contain Jev probabilities and optional usage; ordinary decisions can incur upstream API charges.
+Connect an HTTP-capable local agent to `http://127.0.0.1:8080/mcp`, supplying `Authorization: Bearer <agent-token>`. The only tool is `decide`: send `prompt` and at least two distinct `options`. Results contain the configured provider's probabilities (Jev or Gemini Decisions) and optional usage; ordinary decisions can incur upstream API charges.
 
 - Stateless Streamable HTTP uses POST with SSE responses, not legacy `/sse` or standalone GET streams. GET/DELETE do not create sessions. Supported revisions: 2026-07-28, 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05; JSON-RPC batches are rejected.
 - Only literal loopback addresses are supported. Requests need the exact configured Host and, when supplied, the exact `http://IP:port` Origin. Proxy headers do not establish trust; this is not a public-network deployment mode.
@@ -65,7 +65,7 @@ Connect an HTTP-capable local agent to `http://127.0.0.1:8080/mcp`, supplying `A
 
 | Credential | Purpose | Where it belongs |
 | --- | --- | --- |
-| Upstream API key | Server-to-Jev decisions | Existing decision configuration; never give it to the agent. |
+| Upstream API key | Server-to-provider decisions (Jev or Gemini) | Existing decision configuration; never give it to the agent. |
 | Agent bearer token | Agent-to-local `/mcp` access | Automatic private `agent.token`, `JEVWISE_MCP_TOKEN`, or an explicit protected token file. |
 | Management key | Status/stop and instance verification | Separate private runtime file; never give it to the agent or transmit it as a bearer token. |
 

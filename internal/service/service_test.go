@@ -57,7 +57,7 @@ func TestProviderSelectionNeverInvokesDeferredProviders(t *testing.T) {
 			if svc != nil || err == nil || strings.Contains(err.Error(), "unknown-secret") {
 				t.Fatalf("provider failure = %v, %v", svc, err)
 			}
-			if provider != "unknown-secret" && !errors.Is(err, ErrNotImplemented) {
+			if provider != "unknown-secret" && provider != "gemini" && !errors.Is(err, ErrNotImplemented) {
 				t.Fatalf("missing placeholder sentinel: %v", err)
 			}
 		}

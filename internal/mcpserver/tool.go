@@ -67,7 +67,7 @@ func New(lifetime context.Context, svc service.DecisionService, timeout time.Dur
 		return nil, &toolError{"decision server lifetime has ended", err}
 	}
 	server := mcp.NewServer(&mcp.Implementation{Name: "jevwise", Version: buildinfo.Version}, &mcp.ServerOptions{Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
-	server.AddTool(&mcp.Tool{Name: "decide", Description: "Choose among distinct options using Jev probabilities.",
+	server.AddTool(&mcp.Tool{Name: "decide", Description: "Choose among distinct options using the configured decision provider's probabilities (Jev or Gemini Decisions).",
 		InputSchema: inputSchema, OutputSchema: outputSchema}, decisionHandler(lifetime, svc, timeout))
 	return server, nil
 }
@@ -141,15 +141,15 @@ func decisionHandler(lifetime context.Context, svc service.DecisionService, time
 			return toolFailure("decision canceled or timed out", ctxErr)
 		}
 		if err != nil {
-			return toolFailure("cannot obtain Jev decision", err)
+			return toolFailure("cannot obtain decision", err)
 		}
 		// The concrete Response fields match outputSchema; Marshal rejects non-JSON numbers.
 		output, err := json.Marshal(response)
 		if err != nil {
-			return toolFailure("cannot encode Jev decision", err)
+			return toolFailure("cannot encode decision", err)
 		}
 		if len(output) > outputLimit {
-			return toolFailure("cannot encode Jev decision", errors.New("decision output is too large"))
+			return toolFailure("cannot encode decision", errors.New("decision output is too large"))
 		}
 		if err := callError(); err != nil {
 			return toolFailure("decision canceled or timed out", err)

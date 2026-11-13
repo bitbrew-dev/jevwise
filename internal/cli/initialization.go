@@ -21,7 +21,7 @@ func (e *initializationError) Error() string {
 	case "api_key_invalid":
 		return "API key must contain printable ASCII without whitespace; check the selected credential"
 	default:
-		return "cannot initialize Jev client: check base URL, model and timeout"
+		return "cannot initialize decision client: check base URL, model and timeout"
 	}
 }
 func (e *initializationError) Unwrap() error { return e.cause }

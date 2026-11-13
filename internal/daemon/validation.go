@@ -18,7 +18,7 @@ import (
 // Runtime-directory privacy and exclusive ownership are checked during startup.
 func ValidateBootstrap(boot Bootstrap) error {
 	invalid := errors.New("invalid background bootstrap configuration")
-	if boot.Config.Validate() != nil || boot.Config.Provider != "jev" || boot.Config.APIKey == "" || boot.Config.Timeout > time.Duration(1<<63-1)-30*time.Second {
+	if boot.Config.Validate() != nil || boot.Config.Provider != "jev" && boot.Config.Provider != "gemini" || boot.Config.APIKey == "" || boot.Config.Timeout > time.Duration(1<<63-1)-30*time.Second {
 		return invalid
 	}
 	for _, value := range []string{boot.Config.APIKey, boot.Config.BaseURL, boot.Config.Model, boot.Config.Provider} {

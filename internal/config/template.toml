@@ -14,3 +14,8 @@ api_key = ""
 base_url = "https://api.typesafe.ai"
 model = "jev-latest"
 timeout = "10s"
+
+# Google Gemini Decisions: select with provider = "gemini" or --provider gemini.
+[provider.gemini]
+api_key = ""
+model = "gemini-decision-1"

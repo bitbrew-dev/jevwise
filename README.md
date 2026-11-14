@@ -57,7 +57,18 @@ Supply credentials through a secured environment or protected files, not secret-
 | Default environment variable | Purpose |
 | --- | --- |
 | `JEV_API_KEY` | Upstream Jev API access for decisions and the MCP server's backend |
+| `GOOGLE_API_KEY`, then `GEMINI_API_KEY` | Google Gemini Decisions API access when the `gemini` provider is selected |
 | `JEVWISE_MCP_TOKEN` | Optional override for local MCP authentication; otherwise generated and privately stored |
+
+### Providers
+
+| Provider | Service | Key |
+| --- | --- | --- |
+| `jev` (default) | TypeSafe Jev API | `JEV_API_KEY` |
+| `gemini` | Google Gemini Decisions API (`gemini-decision-1`) | `GOOGLE_API_KEY`, then `GEMINI_API_KEY` |
+| `codex`, `claude` | Reserved, not implemented | |
+
+Select one per call with `--provider gemini`, or for every call with `provider = "gemini"` under `[general]` in your configuration. Each provider reads only its own keys, so a Jev key never reaches Google and the reverse. See [configuration](docs/configuration.md#gemini-decisions-provider).
 
 ### Upstream API key
 
@@ -73,7 +84,24 @@ api_key = "$ABCD_TOKEN"
 - Only the TOML `api_key` expands environment references. Unset variables expand to empty; Jev service initialization requires a nonblank key.
 - Changed `--api-key` flags override nonblank API environment values, which override TOML. Direct environment and flag values stay literal.
 - API fallback names, in order: `JEVWISE_API_KEY`, `TS_JEV_API_KEY`, `TYPESAFE_API_KEY`. The standalone Go SDK retains `TYPESAFE_API_KEY` as its environment fallback. See [configuration](docs/configuration.md).
-- To decide with Google's Gemini Decisions API instead, set `GOOGLE_API_KEY` or `GEMINI_API_KEY` and use `--provider gemini` or `provider = "gemini"` under `[general]`. See [Gemini Decisions provider](docs/configuration.md#gemini-decisions-provider).
+
+### Google API key
+
+Jevwise sends the key in the `x-goog-api-key` header; it does not use OAuth or Application Default Credentials (ADC) at runtime. Get a key in one of two ways:
+
+| Way | Best for | How |
+| --- | --- | --- |
+| 1. Personal (AI Studio) | Trying it out, personal use | Sign in at [aistudio.google.com/api-keys](https://aistudio.google.com/api-keys) and create a key. AI Studio sets up a Google Cloud project if you have none. |
+| 2. Organization project (Terraform) | Teams, billing and key restrictions under an organization | Use ADC once to let Terraform enable the Gemini API, link billing and create a key restricted to `generativelanguage.googleapis.com`. Follow [Google API key via Terraform](docs/gcp_adc.md). |
+
+```shell
+export GEMINI_API_KEY='...'   # or GOOGLE_API_KEY, which wins if both are set
+jevwise decide --provider gemini --prompt "What is 2 + 2?" --option 4 --option 5
+```
+
+- Restrict the key to the Generative Language API, and keep it out of command arguments and stored files, like the Jev key.
+- A paid project needs a positive Gemini prepaid balance in AI Studio; at $0 its keys stop working. See the [Terraform guide](docs/gcp_adc.md#7-buy-gemini-prepaid-credits).
+- Work accounts may block key creation by organization policy; the error names the constraint.
 
 ### Local MCP authentication
 
@@ -90,7 +118,8 @@ api_key = "$ABCD_TOKEN"
 | Guide | Contents |
 | --- | --- |
 | [CLI usage](docs/usage.md) | Decisions and skill setup |
-| [Configuration](docs/configuration.md) | Precedence, API keys, local config and editor |
+| [Configuration](docs/configuration.md) | Precedence, API keys, providers, local config and editor |
+| [Google API key via Terraform](docs/gcp_adc.md) | Organization project key for the Gemini provider |
 | [Go SDK](docs/sdk.md) | Quickstart, request options and retries |
 | [Development](docs/development.md) | Source builds, platform builds and tests |
 | [Debugging](docs/debug.md) | Debug logging and safe diagnostics |
